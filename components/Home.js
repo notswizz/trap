@@ -9,14 +9,13 @@ export default function HomeContent() {
           <div className="w-32 sm:w-64 h-32 sm:h-64 bg-indigo-600 rounded-full filter blur-3xl -ml-10 sm:-ml-20"></div>
           <div className="w-32 sm:w-64 h-32 sm:h-64 bg-pink-600 rounded-full filter blur-3xl -ml-5 sm:-ml-10"></div>
         </div>
-        <h2 className="relative text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+        <h2 className="relative text-lg sm:text-5xl md:text-6xl lg:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
           <Typewriter
             options={{
               strings: [
-                'Your Infinite Marketplace',
                 'Trade, Chat, Create',
                 'AI Trading Platform',
-                'Discover Endless Possibilities'
+                'Discover Infinity'
               ],
               autoStart: true,
               loop: true,
@@ -25,24 +24,38 @@ export default function HomeContent() {
           />
         </h2>
       </div>
-      <p className="mt-4 sm:mt-6 max-w-md mx-auto text-lg sm:text-xl md:text-2xl text-gray-600 font-medium leading-relaxed px-4 sm:px-0">
-        Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits.
+      <p className="mt-4 sm:mt-6 max-w-md mx-auto text-lg sm:text-xl md:text-2xl font-medium leading-relaxed px-4 sm:px-0 
+      bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl py-4 shadow-lg">
+        <span className="bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 bg-clip-text text-transparent animate-pulse">
+          {'< '} 
+        </span>
+        <span className="bg-gradient-to-r from-green-500 to-emerald-400 bg-clip-text text-transparent">
+          your infinite marketplace awaits
+        </span>
+        <span className="bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 bg-clip-text text-transparent animate-pulse">
+          {' />'}
+        </span>
       </p>
-      <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 sm:pt-8">
-        <button
-          onClick={() => window.toggleModal?.()}
-          className="w-full sm:w-auto px-8 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium 
-          hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-200 transform hover:-translate-y-0.5"
-        >
-          Get Started
-        </button>
-        <button
-          className="w-full sm:w-auto px-8 py-3 rounded-full bg-white text-gray-900 font-medium border border-gray-200
-          hover:shadow-xl hover:shadow-gray-900/5 transition-all duration-200 transform hover:-translate-y-0.5"
-        >
-          Learn More
-        </button>
+      <div 
+        onClick={() => window.toggleModal()}
+        className="py-12 sm:py-16 cursor-pointer
+          bg-gradient-to-br from-white/80 via-purple-50/50 to-emerald-50/50
+          border border-indigo-200/30 rounded-3xl shadow-xl
+          hover:shadow-2xl hover:shadow-indigo-500/20 
+          hover:-translate-y-1 active:translate-y-0
+          transition-all duration-300"
+      >
+        <h1 className="text-6xl sm:text-8xl font-black tracking-tighter">
+          <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+            GPT
+          </span>
+          <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
+            Silk
+          </span>
+        </h1>
       </div>
+     
+     
       <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 max-w-6xl mx-auto px-4">
         {[
           { 
