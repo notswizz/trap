@@ -71,7 +71,7 @@ export default function Home() {
 
   const pageTitle = user 
     ? `${user.username} - gptSILK` 
-    : "gptSILK - AI-Powered Marketplace";
+    : "gptSILK - AI Infinite Marketplace";
 
   const pageDescription = user
     ? "Manage your listings, chat with AI, and trade on gptSILK"
