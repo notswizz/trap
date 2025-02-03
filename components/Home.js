@@ -1,28 +1,72 @@
 import Typewriter from 'typewriter-effect';
 
-export default function Home() {
+export default function HomeContent() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-            <Typewriter
-              options={{
-                strings: [
-                  'Welcome to MyApp',
-                  'Your Journey Begins Here',
-                  'Let Your Imagination Soar'
-                ],
-                autoStart: true,
-                loop: true,
-                delay: 75,
-              }}
-            />
-          </h1>
-          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-            Start building something amazing today.
-          </p>
+    <div className="text-center space-y-8">
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+          <div className="w-64 h-64 bg-purple-600 rounded-full filter blur-3xl"></div>
+          <div className="w-64 h-64 bg-indigo-600 rounded-full filter blur-3xl -ml-20"></div>
+          <div className="w-64 h-64 bg-pink-600 rounded-full filter blur-3xl -ml-10"></div>
         </div>
+        <h2 className="relative text-5xl sm:text-6xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+          <Typewriter
+            options={{
+              strings: [
+                'Your Infinite Marketplace',
+                'Trade, Chat, Create',
+                'AI Trading Platform',
+                'Discover Endless Possibilities'
+              ],
+              autoStart: true,
+              loop: true,
+              delay: 75,
+            }}
+          />
+        </h2>
+      </div>
+      <p className="mt-6 max-w-md mx-auto text-xl text-gray-600 md:text-2xl md:max-w-3xl font-medium leading-relaxed">
+        Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits.
+      </p>
+      <div className="flex justify-center gap-4 pt-8">
+        <button
+          onClick={() => window.toggleModal?.()}
+          className="px-8 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium 
+          hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-200 transform hover:-translate-y-0.5"
+        >
+          Get Started
+        </button>
+        <button
+          className="px-8 py-3 rounded-full bg-white text-gray-900 font-medium border border-gray-200
+          hover:shadow-xl hover:shadow-gray-900/5 transition-all duration-200 transform hover:-translate-y-0.5"
+        >
+          Learn More
+        </button>
+      </div>
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto px-4">
+        {[
+          { 
+            title: 'Intelligent Marketplace',
+            description: 'Experience dynamic, AI-powered listings that adapt to your needs. Create, browse and trade seamlessly with other users.',
+            icon: '🏪'
+          },
+          { 
+            title: 'Smart Wallet Integration',
+            description: 'Watch your digital wallet grow as you trade. Track your balance and transaction history with enterprise-grade security.',
+            icon: '💰'
+          },
+          { 
+            title: 'Evolving AI Assistant',
+            description: 'Chat with our state-of-the-art AI that learns from each interaction, providing increasingly personalized help with trades and listings.',
+            icon: '🤖'
+          }
+        ].map((feature, index) => (
+          <div key={index} className="p-8 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
+            <div className="text-4xl mb-4">{feature.icon}</div>
+            <h3 className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{feature.title}</h3>
+            <p className="mt-3 text-gray-600 leading-relaxed">{feature.description}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
