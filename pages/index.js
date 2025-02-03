@@ -69,15 +69,38 @@ export default function Home() {
     };
   }, [toggleModal]);
 
+  const pageTitle = user 
+    ? `${user.username} - gptSILK` 
+    : "gptSILK - AI-Powered Marketplace";
+
+  const pageDescription = user
+    ? "Manage your listings, chat with AI, and trade on gptSILK"
+    : "Create and browse listings via AI chat, manage your digital wallet, and trade with confidence.";
+
   return (
     <>
       <Head>
-        <title>gptSILK - Infinite Marketplace</title>
-        <meta
-          name="description"
-          content="Join gptSILK, where extraordinary ideas take form. Connect, chat, and innovate."
-        />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        
+        {/* Open Graph Meta Tags */}
+        <meta property="og:title" content="gptSILK - AI-Powered Marketplace" />
+        <meta property="og:description" content="Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://trapchat.vercel.app" /> {/* Replace with your actual domain */}
+        <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Silk_road_Kazakhstan.svg/1200px-Silk_road_Kazakhstan.svg.png" /> {/* Replace with your actual image URL */}
+        <meta property="og:site_name" content="gptSILK" />
+
+
+        
+        {/* Additional Meta Tags */}
+        <meta name="theme-color" content="#4F46E5" /> {/* Matches your indigo-600 color */}
+        <link rel="icon" href="/favicon.ico" />
+        
+        
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
         <NavBar 
