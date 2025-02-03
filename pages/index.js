@@ -87,10 +87,10 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
         {/* Open Graph Meta Tags */}
-        <meta property="og:title" content="gptSILK - AI-Powered Marketplace" />
+        <meta property="og:title" content="gptSILK - AI Infinite Marketplace" />
         <meta property="og:description" content="Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://trapchat.vercel.app" /> {/* Replace with your actual domain */}
+        <meta property="og:url" content="https://silkgpt.vercel.app" /> {/* Replace with your actual domain */}
         <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Silk_road_Kazakhstan.svg/1200px-Silk_road_Kazakhstan.svg.png" /> {/* Replace with your actual image URL */}
         <meta property="og:site_name" content="gptSILK" />
 
