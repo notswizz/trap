@@ -11,10 +11,10 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-bold">
           <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent font-black">
-            GPT
+            gpt
           </span>
           <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent font-black">
-            Silk
+            SILK
           </span>
         </h1>
         {user ? (

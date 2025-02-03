@@ -47,10 +47,10 @@ export default function HomeContent() {
       >
         <h1 className="text-6xl sm:text-8xl font-black tracking-tighter">
           <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-            GPT
+            gpt
           </span>
           <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
-            Silk
+            SILK
           </span>
         </h1>
       </div>
