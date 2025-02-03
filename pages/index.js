@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Modal from '../components/Modal';
 import Login from '../components/Login';
 import SignUp from '../components/SignUp';
-import ChatBot from '../components/ChatBot';
+import ChatBot from '../components/chat/ChatBot';
 import Typewriter from 'typewriter-effect';
 import NavBar from '../components/NavBar';
 import HomeContent from '../components/Home';
