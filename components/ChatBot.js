@@ -386,32 +386,32 @@ export default function ChatBot({ onMessageSent }) {
   };
 
   return (
-    <div className="h-[calc(100vh-12rem)] max-h-[800px] flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="h-[calc(100vh-8rem)] sm:h-[calc(100vh-12rem)] max-h-[800px] flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
       {/* Header with New Chat button */}
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50">
-        <h2 className="text-xl font-semibold text-gray-800">Chat</h2>
+      <div className="p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Chat</h2>
         <button
           onClick={handleNewChat}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg 
+          className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg 
           hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 
-          flex items-center space-x-2 shadow-md hover:shadow-lg"
+          flex items-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg text-sm sm:text-base"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           <span>New Chat</span>
         </button>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
+      {/* Messages Area - adjust padding and spacing for mobile */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
         {messages.map((message, index) => (
           <div
             key={index}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
           >
             <div
-              className={`max-w-[85%] px-5 py-3 rounded-2xl ${
+              className={`max-w-[90%] sm:max-w-[85%] px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl ${
                 message.role === 'user'
                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-none shadow-lg shadow-indigo-500/20'
                   : message.isAction
@@ -421,15 +421,15 @@ export default function ChatBot({ onMessageSent }) {
                   : 'bg-white text-gray-800 rounded-bl-none border border-gray-100 shadow-md'
               }`}
             >
-              <div className="whitespace-pre-wrap text-md leading-relaxed">{message.content}</div>
+              <div className="whitespace-pre-wrap text-sm sm:text-md leading-relaxed">{message.content}</div>
               
-              {/* Only show confirmation buttons for pending action messages */}
+              {/* Adjust confirmation buttons for mobile */}
               {message.isAction && message.isPending && (
-                <div className="mt-3 flex gap-2">
+                <div className="mt-2 sm:mt-3 flex gap-2">
                   <button
                     onClick={() => handleActionConfirmation(true, message.analysis.action, message.timestamp)}
                     disabled={completedActions.has(message.timestamp) || isLoading}
-                    className={`px-4 py-1.5 text-white text-sm font-medium rounded-full
+                    className={`px-3 sm:px-4 py-1 sm:py-1.5 text-white text-xs sm:text-sm font-medium rounded-full
                     transition-all duration-200 ${
                       completedActions.has(message.timestamp) || isLoading
                         ? 'bg-gray-400 opacity-50 cursor-not-allowed'
@@ -441,7 +441,7 @@ export default function ChatBot({ onMessageSent }) {
                   <button
                     onClick={() => handleActionConfirmation(false, message.analysis.action, message.timestamp)}
                     disabled={completedActions.has(message.timestamp) || isLoading}
-                    className={`px-4 py-1.5 text-white text-sm font-medium rounded-full
+                    className={`px-3 sm:px-4 py-1 sm:py-1.5 text-white text-xs sm:text-sm font-medium rounded-full
                     transition-all duration-200 ${
                       completedActions.has(message.timestamp) || isLoading
                         ? 'bg-gray-400 opacity-50 cursor-not-allowed'
@@ -453,7 +453,8 @@ export default function ChatBot({ onMessageSent }) {
                 </div>
               )}
 
-              <div className={`text-xs mt-2 flex items-center gap-1.5 ${
+              {/* Adjust timestamp size for mobile */}
+              <div className={`text-[10px] sm:text-xs mt-1.5 sm:mt-2 flex items-center gap-1.5 ${
                 message.role === 'user' 
                   ? 'text-indigo-200' 
                   : message.isAction 
@@ -462,7 +463,7 @@ export default function ChatBot({ onMessageSent }) {
                     : 'text-green-600'
                   : 'text-gray-400'
               }`}>
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
                 </svg>
                 {new Date(message.timestamp).toLocaleTimeString()}
@@ -495,9 +496,9 @@ export default function ChatBot({ onMessageSent }) {
         )}
       </div>
 
-      {/* Input Area */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
-        <div className="flex space-x-4">
+      {/* Input Area - adjust for mobile */}
+      <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="flex space-x-2 sm:space-x-4">
           <div className="flex-1 relative">
             <input
               type="text"
@@ -505,7 +506,7 @@ export default function ChatBot({ onMessageSent }) {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
               disabled={isLoading}
-              className="w-full px-5 py-3 rounded-2xl border border-gray-200/80 bg-white/90 
+              className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200/80 bg-white/90 
               focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent 
               placeholder-gray-400 text-gray-700 text-sm shadow-sm
               disabled:bg-gray-50/90 disabled:cursor-not-allowed transition-all duration-300
@@ -515,11 +516,11 @@ export default function ChatBot({ onMessageSent }) {
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className={`px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl
+            className={`px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl sm:rounded-2xl
             hover:shadow-lg hover:shadow-indigo-500/30 active:shadow-inner
             transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0
             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none 
-            disabled:hover:transform-none text-sm font-medium min-w-[90px]
+            disabled:hover:transform-none text-sm font-medium min-w-[70px] sm:min-w-[90px]
             border border-indigo-500/20`}
           >
             {isLoading ? 'Sending...' : 'Send'}

@@ -72,10 +72,10 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>ChatEconomy - Chat with the Future</title>
+        <title>gptSILK - Infinite Marketplace</title>
         <meta
           name="description"
-          content="Join ChatEconomy, where extraordinary ideas take form. Connect, chat, and innovate."
+          content="Join gptSILK, where extraordinary ideas take form. Connect, chat, and innovate."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
