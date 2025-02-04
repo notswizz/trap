@@ -2,7 +2,7 @@ import { connectToDatabase } from '../../../utils/mongodb';
 import { withAuth } from '../../../utils/authMiddleware';
 import { ObjectId } from 'mongodb';
 
-async function handler(req, res) {
+export default withAuth(async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -30,33 +30,24 @@ async function handler(req, res) {
     });
 
     try {
-      // Get total active listings count
+      // Get total active listings
       const totalListings = await db.collection('listings')
-        .countDocuments({});  // Removed status filter temporarily for testing
-      
-      // Debug log
-      console.log('Total listings:', totalListings);
+        .countDocuments({ status: 'active' });
 
-      // Get user's listings - simplified query for testing
+      // Get listings currently owned by user
       const userListings = await db.collection('listings')
-        .countDocuments({
-          $or: [
-            { currentOwnerUsername: user.username },
-            { creatorUsername: user.username }
-          ]
+        .countDocuments({ 
+          currentOwnerUsername: user.username,
+          status: 'active'
         });
 
-      // Debug log
-      console.log('User listings:', {
-        username: user.username,
-        count: userListings
-      });
+      // Calculate average response time (placeholder for now)
+      const responseTime = '< 1s';
 
-      // Simplified response for testing
-      return res.status(200).json({
+      res.status(200).json({
         totalListings,
         userListings,
-        responseTime: '238ms' // Static for now
+        responseTime
       });
 
     } catch (dbError) {
@@ -76,6 +67,4 @@ async function handler(req, res) {
       error: error.message 
     });
   }
-}
-
-export default withAuth(handler); 
+}); 

@@ -74,7 +74,7 @@ export default function HomeContent() {
         </h2>
       </div>
      
-      <div className="mt-8 sm:mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 max-w-6xl mx-auto px-4">
+      <div className="mt-6 sm:mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto px-4">
         {[
           { 
             title: 'Intelligent Marketplace',
@@ -82,7 +82,7 @@ export default function HomeContent() {
             icon: '🏪'
           },
           { 
-            title: 'Smart Wallet Integration', 
+            title: 'Smart Wallet', 
             description: 'Watch your digital wallet grow as you trade. Track your balance and transaction history with enterprise-grade security.',
             icon: '💰'
           },
@@ -92,9 +92,9 @@ export default function HomeContent() {
             icon: '🤖'
           }
         ].map((feature, index) => (
-          <div key={index} className="p-8 bg-gradient-to-br from-white/80 via-purple-50/50 to-emerald-50/50 backdrop-blur-lg rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 transform hover:-translate-y-1 border border-indigo-200/30">
-            <div className="mx-auto mb-6 bg-gradient-to-br from-white via-indigo-50/50 to-purple-50/50 w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border border-indigo-100/30 hover:scale-110 transition-transform duration-300">
-              <span className="text-5xl filter drop-shadow-md">{feature.icon}</span>
+          <div key={index} className="p-6 bg-gradient-to-br from-white/80 via-purple-50/50 to-emerald-50/50 backdrop-blur-lg rounded-xl shadow hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 transform hover:-translate-y-1 border border-indigo-200/30">
+            <div className="mx-auto mb-4 bg-gradient-to-br from-white via-indigo-50/50 to-purple-50/50 w-16 h-16 rounded-xl flex items-center justify-center shadow border border-indigo-100/30 hover:scale-110 transition-transform duration-300">
+              <span className="text-4xl filter drop-shadow-md">{feature.icon}</span>
             </div>
             <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent text-center mb-4">{feature.title}</h3>
             <p className="mt-3 text-gray-700 leading-relaxed text-center">

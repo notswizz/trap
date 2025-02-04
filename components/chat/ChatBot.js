@@ -267,23 +267,29 @@ export default function ChatBot({ onMessageSent }) {
 
   return (
     <div className="h-[calc(100vh-8rem)] sm:h-[calc(100vh-12rem)] max-h-[800px] flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
-      <ChatHeader 
-        onNewChat={handleNewChat} 
-        onMessageSent={lastMessageTimestamp} 
-      />
-      <ChatMessages
-        messages={messages}
-        isLoading={isLoading}
-        error={error}
-        handleActionConfirmation={handleActionConfirmation}
-        completedActions={completedActions}
-      />
-      <ChatInput
-        input={input}
-        setInput={setInput}
-        handleSubmit={handleSubmit}
-        isLoading={isLoading}
-      />
+      <div className="flex flex-col h-full">
+        <ChatHeader 
+          onNewChat={handleNewChat}
+          isLoading={isLoading}
+          error={error}
+        />
+        
+        <ChatMessages 
+          messages={messages}
+          onActionConfirmation={handleActionConfirmation}
+          completedActions={completedActions}
+          lastMessageTimestamp={lastMessageTimestamp}
+          isLoading={isLoading}
+        />
+        
+        <ChatInput 
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          isLoading={isLoading}
+          isNewConversation={messages.length <= 1}
+        />
+      </div>
     </div>
   );
 } 

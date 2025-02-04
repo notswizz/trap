@@ -5,8 +5,9 @@ export default function ChatMessages({
   messages, 
   isLoading, 
   error, 
-  handleActionConfirmation, 
-  completedActions 
+  onActionConfirmation, 
+  completedActions,
+  lastMessageTimestamp 
 }) {
   const messagesEndRef = useRef(null);
 
@@ -16,7 +17,7 @@ export default function ChatMessages({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, lastMessageTimestamp]);
 
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
@@ -37,7 +38,7 @@ export default function ChatMessages({
           <ChatMessage
             key={index}
             message={enhancedMessage}
-            handleActionConfirmation={handleActionConfirmation}
+            handleActionConfirmation={onActionConfirmation}
             completedActions={completedActions}
             isLoading={isLoading}
           />

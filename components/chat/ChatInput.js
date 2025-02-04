@@ -1,8 +1,57 @@
 import React from 'react';
 
-export default function ChatInput({ input, setInput, handleSubmit, isLoading }) {
+export default function ChatInput({ input, setInput, handleSubmit, isLoading, isNewConversation = false }) {
+  const promptButtons = [
+    { 
+      label: '💰 Add Balance', 
+      action: 'updateBalance',
+      prompt: 'I would like to add more tokens to my balance'
+    },
+    { 
+      label: '📋 View Listings', 
+      action: 'fetchListings',
+      prompt: 'Show me all available listings'
+    },
+    { 
+      label: '✨ Create Listing', 
+      action: 'createListing',
+      prompt: 'I want to create a new listing'
+    },
+    { 
+      label: '❓ FAQ', 
+      action: 'none',
+      prompt: 'What can I do in this marketplace? Please explain the available actions and how to use them.'
+    }
+  ];
+
+  const handlePromptClick = (prompt) => {
+    setInput(prompt);
+    // Optional: Auto-submit the prompt
+    handleSubmit(new Event('submit'), prompt);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm space-y-2">
+    <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm space-y-4">
+      {isNewConversation && (
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3 justify-center">
+          {promptButtons.map((button) => (
+            <button
+              key={button.label}
+              type="button"
+              onClick={() => handlePromptClick(button.prompt)}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm rounded-xl bg-white border border-gray-200 
+                hover:border-indigo-300 hover:bg-indigo-50/50 hover:shadow-sm
+                transition-all duration-300 flex items-center justify-center gap-2
+                disabled:opacity-50 disabled:cursor-not-allowed
+                whitespace-nowrap overflow-hidden text-ellipsis"
+            >
+              {button.label}
+            </button>
+          ))}
+        </div>
+      )}
+      
       <div className="relative">
         <input
           type="text"
