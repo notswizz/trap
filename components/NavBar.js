@@ -42,11 +42,11 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
           <button
             onClick={onLogin}
             aria-label="Open authentication modal" 
-            className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm sm:text-base font-medium
+            className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-emerald-300 to-emerald-500 text-white text-sm sm:text-base font-medium
             hover:shadow-xl hover:shadow-emerald-500/20
             active:shadow-md active:translate-y-0.5 
             transition-all duration-300 transform hover:-translate-y-1
-            border border-emerald-400/30 backdrop-blur-sm
+            border border-purple-400/30 backdrop-blur-sm
             flex items-center gap-2"
           >
             <span>👋</span>

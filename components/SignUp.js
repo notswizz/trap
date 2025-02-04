@@ -51,10 +51,15 @@ export default function SignUp({ onToggleForm }) {
         </div>
       )}
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          Join ChatEconomy
+        <h2 className="text-3xl font-bold text-center">
+          <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+            gpt
+          </span>
+          <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
+            SILK
+          </span>
         </h2>
-        <p className="text-center text-gray-500">Create your account to start earning with AI</p>
+        <p className="text-center text-gray-500">Create your account to start trading with AI</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
@@ -108,7 +113,7 @@ export default function SignUp({ onToggleForm }) {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 
+            className={`w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 
             text-white font-medium hover:shadow-lg hover:shadow-indigo-500/30 
             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 
             transform transition-all duration-200 hover:-translate-y-0.5
@@ -132,7 +137,7 @@ export default function SignUp({ onToggleForm }) {
       <div className="text-center">
         <button
           onClick={onToggleForm}
-          className="text-indigo-600 hover:text-indigo-500 font-medium transition-colors"
+          className="text-emerald-500 hover:text-emerald-400 font-medium transition-colors"
         >
           Sign in to your account →
         </button>
