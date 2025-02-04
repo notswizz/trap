@@ -62,7 +62,7 @@ export default withAuth(async function handler(req, res) {
           // Save only one message with the result
           await saveMessageToConversation(conversation._id, {
             role: 'system',
-            content: `Confirmed: Balance updated from ${actionResult.balance - pendingAction.data.amount} to ${actionResult.balance} coins`,
+            content: `Confirmed: Balance updated from ${actionResult.balance - pendingAction.data.amount} to ${actionResult.balance} tokens`,
             isAction: true,
             analysis: {
               action: {
@@ -153,9 +153,9 @@ export default withAuth(async function handler(req, res) {
 
         analysis.chatResponse = `Would you like me to ${
           analysis.action.type === 'updateBalance'
-            ? `add ${analysis.action.data.amount} coins to your balance`
+            ? `add ${analysis.action.data.amount} tokens to your balance`
             : analysis.action.type === 'createListing'
-            ? `create a listing for "${analysis.action.data.title}" at ${analysis.action.data.price} coins`
+            ? `create a listing for "${analysis.action.data.title}" at ${analysis.action.data.price} tokens`
             : 'perform this action'
         }? Please confirm.`;
       }

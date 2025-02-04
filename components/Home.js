@@ -1,4 +1,5 @@
 import Typewriter from 'typewriter-effect';
+import SimpleChatBot from './chat/SimpleChatBot';
 
 export default function HomeContent() {
   return (
@@ -10,27 +11,11 @@ export default function HomeContent() {
           <div className="w-32 sm:w-64 h-32 sm:h-64 bg-pink-600 rounded-full filter blur-3xl -ml-5 sm:-ml-10"></div>
         </div>
         
-        <div 
-          onClick={() => window.toggleModal()}
-          className="py-12 sm:py-16 cursor-pointer
-            bg-gradient-to-br from-white/80 via-purple-50/50 to-emerald-50/50
-            border border-indigo-200/30 rounded-3xl shadow-xl
-            hover:shadow-2xl hover:shadow-indigo-500/20 
-            hover:-translate-y-1 active:translate-y-0
-            transition-all duration-300"
-        >
-          <h1 className="text-6xl sm:text-8xl font-black tracking-tighter">
-            <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-              gpt
-            </span>
-            <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
-              SILK
-            </span>
-          </h1>
-        </div>
+        <SimpleChatBot />
 
         <h2 className="relative mt-4 sm:mt-6 max-w-md mx-auto text-lg sm:text-xl md:text-2xl font-medium px-4 sm:px-0 
-        bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl py-4 shadow-lg flex items-center justify-center whitespace-nowrap">
+          bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl py-4 shadow-lg 
+          flex items-center justify-center whitespace-nowrap">
           <span className="bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 bg-clip-text text-transparent animate-pulse inline-block">
             {'<'}
           </span>

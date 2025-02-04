@@ -19,9 +19,9 @@ export function transformMessages(messages) {
       if (msg.analysis.action.type === 'updateBalance') {
         const amount = msg.analysis.action.data.amount;
         const newBalance = msg.analysis.actionResult?.balance || 0;
-        actionMessage = `Balance updated: ${amount > 0 ? '+' : ''}${amount} coins\nNew balance: ${newBalance} coins`;
+        actionMessage = `Balance updated: ${amount > 0 ? '+' : ''}${amount} tokens\nNew balance: ${newBalance} tokens`;
       } else if (msg.analysis.action.type === 'createListing') {
-        actionMessage = `Created listing: ${msg.analysis.action.data.title}\nPrice: ${msg.analysis.action.data.price} coins`;
+        actionMessage = `Created listing: ${msg.analysis.action.data.title}\nPrice: ${msg.analysis.action.data.price} tokens`;
       } else if (msg.analysis.action.type === 'fetchListings') {
         const result = msg.analysis.actionResult;
         if (result.count === 0) {
@@ -56,9 +56,9 @@ export function formatActionMessage(action, result) {
   if (action.status === 'pending' && !result) {
     switch (action.type) {
       case 'updateBalance':
-        return `Pending Action: Add ${action.data.amount} coins to balance`;
+        return `Pending Action: Add ${action.data.amount} tokens to balance`;
       case 'createListing':
-        return `Pending Action: Create listing "${action.data.title}" for ${action.data.price} coins`;
+        return `Pending Action: Create listing "${action.data.title}" for ${action.data.price} tokens`;
       case 'fetchListings':
         return `Pending Action: Fetch ${action.data.type} listings`;
       default:
@@ -70,14 +70,14 @@ export function formatActionMessage(action, result) {
   if (result) {
     switch (action.type) {
       case 'updateBalance':
-        return `Confirmed: Balance updated from ${result.balance - (action.data.amount || 0)} to ${result.balance} coins`;
+        return `Confirmed: Balance updated from ${result.balance - (action.data.amount || 0)} to ${result.balance} tokens`;
       case 'createListing':
-        return `Confirmed: Created listing "${action.data.title}" for ${action.data.price} coins`;
+        return `Confirmed: Created listing "${action.data.title}" for ${action.data.price} tokens`;
       case 'fetchListings':
         if (!result.listings?.length) return 'No listings found';
         return `Found ${result.count} listing(s):\n\n${
           result.listings.map(l => 
-            `• ${l.title} (${l.price} coins) - ${l.owner}`
+            `• ${l.title} (${l.price} tokens) - ${l.owner}`
           ).join('\n')
         }`;
       default:

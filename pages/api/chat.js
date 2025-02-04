@@ -25,7 +25,7 @@ export default withAuth(async function handler(req, res) {
     const formattedMessages = [
       {
         role: 'system',
-        content: 'You are a helpful AI assistant in a chat-based economy game. Help users earn and manage their virtual currency through engaging conversations and tasks.'
+        content: 'You are a helpful AI assistant in a chat-based economy game. Help users manage their virtual tokens and listings through engaging conversations.'
       },
       ...history.map(msg => ({
         role: msg.role,

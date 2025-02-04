@@ -18,8 +18,8 @@ STRICT Guidelines:
 - For casual conversation -> Use None
 
 Example flow:
-User: "add 10 coins"
-AI: {chatResponse: "Would you like me to add 10 coins to your balance? Please confirm.", action: {type: "updateBalance", data: {amount: 10}, status: "pending"}}
+User: "add 10 tokens"
+AI: {chatResponse: "Would you like me to add 10 tokens to your balance? Please confirm.", action: {type: "updateBalance", data: {amount: 10}, status: "pending"}}
 User: "yes"
 AI: {chatResponse: "Balance updated!", action: {type: "confirmAction", data: {previousAction: "updateBalance", amount: 10}}}
 

@@ -19,7 +19,7 @@ export default withAuth(async function handler(req, res) {
       // Create welcome message prompt based on history
       const welcomePrompt = `You are a helpful AI assistant in a chat-based economy game.
 Current user: ${req.user.displayName}
-Current balance: ${req.user.balance || 0} coins
+Current balance: ${req.user.balance || 0} tokens
 Chat history: ${previousConversations.length} previous conversations
 
 Generate a personalized welcome message. If they're a returning user, acknowledge their previous interactions.
@@ -37,9 +37,9 @@ Response format:
           role: 'system',
           content: welcomePrompt
         },
-        // Include last few messages from previous conversations for context
-        ...previousConversations.slice(0, 3).flatMap(conv => 
-          conv.messages.slice(-2).map(msg => ({
+        // Include all messages from previous conversations for context
+        ...previousConversations.flatMap(conv => 
+          conv.messages.map(msg => ({
             role: msg.role,
             content: msg.content
           }))
