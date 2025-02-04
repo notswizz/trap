@@ -24,17 +24,16 @@ export default withAuth(async function handler(req, res) {
       balance: req.user.balance
     });
 
-    const { message, confirmationResponse } = req.body;
+    const { message, confirmationResponse, pendingAction } = req.body;
 
-    // If this is a confirmation response, handle it differently
+    // If this is a confirmation response, handle it
     if (confirmationResponse) {
       const isConfirmed = message === 'confirm';
       
-      // Get the pending action from conversation
-      const pendingAction = conversation.pendingAction;
+      // Get the pending action from the request body or conversation
+      const actionToExecute = pendingAction || conversation.pendingAction;
 
-      // Only handle confirmation/cancellation if there's actually a pending action
-      if (!pendingAction) {
+      if (!actionToExecute) {
         return res.status(200).json({
           message: "No pending action to confirm or cancel.",
           action: { type: 'None' }
@@ -44,10 +43,12 @@ export default withAuth(async function handler(req, res) {
       if (isConfirmed) {
         try {
           const { db } = await connectToDatabase();
+
+          // Execute the action with the original pending action data
           const actionResult = await executeAction(
-            pendingAction.type,
+            actionToExecute.type,
             req.user._id.toString(),
-            pendingAction.data
+            actionToExecute.data
           );
 
           // Clear the pending action
@@ -59,14 +60,14 @@ export default withAuth(async function handler(req, res) {
             }
           );
 
-          // Save only one message with the result
+          // Save the confirmation message
           await saveMessageToConversation(conversation._id, {
             role: 'system',
-            content: `Confirmed: Balance updated from ${actionResult.balance - pendingAction.data.amount} to ${actionResult.balance} tokens`,
+            content: `Action confirmed: ${actionToExecute.type}`,
             isAction: true,
             analysis: {
               action: {
-                ...pendingAction,
+                ...actionToExecute,
                 status: 'completed'
               },
               actionExecuted: true,
@@ -75,34 +76,41 @@ export default withAuth(async function handler(req, res) {
           });
 
           return res.status(200).json({
-            message: "Is there anything else I can help you with?",
+            message: "Action completed successfully. Is there anything else I can help you with?",
             action: {
-              ...pendingAction,
+              ...actionToExecute,
               status: 'completed'
             },
             actionResult
           });
         } catch (error) {
           console.error('Action execution error:', error);
-          return res.status(400).json({ message: error.message });
+          
+          // Save the error message
+          await saveMessageToConversation(conversation._id, {
+            role: 'system',
+            content: `Error: ${error.message}`,
+            isError: true
+          });
+          
+          return res.status(400).json({ 
+            message: error.message,
+            error: true
+          });
         }
       } else {
-        // For cancellation, also clear the pending action
+        // For cancellation, clear the pending action
         const { db } = await connectToDatabase();
         await db.collection('conversations').updateOne(
           { _id: new ObjectId(conversationId) },
           { $unset: { pendingAction: "" } }
         );
 
-        // Handle cancellation
+        // Save cancellation message
         await saveMessageToConversation(conversation._id, {
-          role: 'assistant',
-          content: "Action cancelled. Is there anything else I can help you with?",
-          analysis: {
-            action: { type: 'None' },
-            actionExecuted: false,
-            actionResult: null
-          }
+          role: 'system',
+          content: "Action cancelled",
+          isAction: true
         });
 
         return res.status(200).json({
@@ -139,7 +147,7 @@ export default withAuth(async function handler(req, res) {
           status: 'pending'
         };
 
-        // Save the pending action to the conversation document
+        // Save the pending action
         const { db } = await connectToDatabase();
         await db.collection('conversations').updateOne(
           { _id: new ObjectId(conversationId) },
@@ -150,14 +158,6 @@ export default withAuth(async function handler(req, res) {
             }
           }
         );
-
-        analysis.chatResponse = `Would you like me to ${
-          analysis.action.type === 'updateBalance'
-            ? `add ${analysis.action.data.amount} tokens to your balance`
-            : analysis.action.type === 'createListing'
-            ? `create a listing for "${analysis.action.data.title}" at ${analysis.action.data.price} tokens`
-            : 'perform this action'
-        }? Please confirm.`;
       }
     }
 

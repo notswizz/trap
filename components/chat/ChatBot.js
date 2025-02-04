@@ -185,18 +185,30 @@ export default function ChatBot({ onMessageSent }) {
     setIsLoading(true);
 
     try {
+      // Find the original message with the pending action
+      const originalMessage = messages.find(m => m.timestamp === messageId);
+      const actionToConfirm = originalMessage?.analysis?.action || pendingAction;
+
+      console.log('Confirming action:', {
+        confirmed,
+        action: actionToConfirm,
+        messageId
+      });
+
       const res = await fetch(`/api/chat/${currentConversationId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: confirmed ? 'confirm' : 'cancel',
-          confirmationResponse: true
+          confirmationResponse: true,
+          pendingAction: actionToConfirm
         }),
         credentials: 'include',
       });
 
       if (!res.ok) {
-        throw new Error(await res.text() || 'Failed to process confirmation');
+        const errorText = await res.text();
+        throw new Error(errorText || 'Failed to process confirmation');
       }
 
       const data = await res.json();
@@ -219,7 +231,12 @@ export default function ChatBot({ onMessageSent }) {
             role: 'system',
             content: actionMessage,
             timestamp: new Date(),
-            isAction: true
+            isAction: true,
+            analysis: {
+              action: data.action,
+              actionExecuted: true,
+              actionResult: data.actionResult
+            }
           });
         }
       }
@@ -232,6 +249,12 @@ export default function ChatBot({ onMessageSent }) {
     } catch (err) {
       console.error('Confirmation error:', err);
       setError(err.message);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `Error: ${err.message}`,
+        timestamp: new Date(),
+        isError: true
+      }]);
       setCompletedActions(prev => {
         const newSet = new Set(prev);
         newSet.delete(messageId);

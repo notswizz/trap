@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 
 export default function ChatMessages({ 
@@ -8,17 +8,41 @@ export default function ChatMessages({
   handleActionConfirmation, 
   completedActions 
 }) {
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   return (
     <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
-      {messages.map((message, index) => (
-        <ChatMessage
-          key={index}
-          message={message}
-          handleActionConfirmation={handleActionConfirmation}
-          completedActions={completedActions}
-          isLoading={isLoading}
-        />
-      ))}
+      {messages.map((message, index) => {
+        // Ensure action data is properly structured
+        const enhancedMessage = {
+          ...message,
+          analysis: message.analysis ? {
+            ...message.analysis,
+            action: message.analysis.action ? {
+              ...message.analysis.action,
+              data: message.analysis.action.data || message.analysis.action
+            } : null
+          } : null
+        };
+
+        return (
+          <ChatMessage
+            key={index}
+            message={enhancedMessage}
+            handleActionConfirmation={handleActionConfirmation}
+            completedActions={completedActions}
+            isLoading={isLoading}
+          />
+        );
+      })}
       
       {isLoading && (
         <div className="flex justify-start">
@@ -44,6 +68,7 @@ export default function ChatMessages({
           </div>
         </div>
       )}
+      <div ref={messagesEndRef} />
     </div>
   );
 } 

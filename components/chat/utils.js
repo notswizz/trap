@@ -61,6 +61,8 @@ export function formatActionMessage(action, result) {
         return `Pending Action: Create listing "${action.data.title}" for ${action.data.price} tokens`;
       case 'fetchListings':
         return `Pending Action: Fetch ${action.data.type} listings`;
+      case 'buyListing':
+        return `Pending Action: Purchase ${action.data.listingId} for ${action.data.price} tokens`;
       default:
         return null;
     }
@@ -80,6 +82,8 @@ export function formatActionMessage(action, result) {
             `• ${l.title} (${l.price} tokens) - ${l.owner}`
           ).join('\n')
         }`;
+      case 'buyListing':
+        return `Confirmed: Purchased ${action.data.listingId} for ${action.data.price} tokens`;
       default:
         return null;
     }

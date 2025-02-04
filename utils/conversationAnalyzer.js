@@ -7,6 +7,7 @@ Possible actions:
 - updateBalance: {amount: number, reason: string}
 - createListing: {title: string, price: number, description: string}
 - fetchListings: {type: "my"|"all"|"user", username?: string}
+- buyListing: {listingId: string, price: number}
 - confirmAction: {actionToConfirm: Object} // For confirming pending actions
 - None: null
 
@@ -16,17 +17,36 @@ STRICT Guidelines:
 - For "confirm", "yes", "do it" -> Execute pending action
 - For "cancel", "no", "nevermind" -> Clear pending action
 - For casual conversation -> Use None
+- For buy requests -> Verify listing ID and price before setting pending action
+- For browse/show/see/view listings -> Execute fetchListings immediately (no confirmation needed)
+- For browse/show all -> Use type: "all"
+- For show my listings -> Use type: "my"
+- For show user's listings -> Use type: "user" with username
 
-Example flow:
+Example flows:
 User: "add 10 tokens"
 AI: {chatResponse: "Would you like me to add 10 tokens to your balance? Please confirm.", action: {type: "updateBalance", data: {amount: 10}, status: "pending"}}
 User: "yes"
 AI: {chatResponse: "Balance updated!", action: {type: "confirmAction", data: {previousAction: "updateBalance", amount: 10}}}
 
+User: "buy listing abc123 for 50 tokens"
+AI: {chatResponse: "Would you like to purchase this listing for 50 tokens? Please confirm.", action: {type: "buyListing", data: {listingId: "abc123", price: 50}, status: "pending"}}
+User: "yes"
+AI: {chatResponse: "Processing your purchase!", action: {type: "confirmAction", data: {previousAction: "buyListing", listingId: "abc123", price: 50}}}
+
+User: "show all listings"
+AI: {chatResponse: "Here are all available listings:", action: {type: "fetchListings", data: {type: "all"}}}
+
+User: "browse listings"
+AI: {chatResponse: "Here are all available listings:", action: {type: "fetchListings", data: {type: "all"}}}
+
 Examples:
-✅ "add 10 coins" -> updateBalance
-✅ "create listing for moon" -> createListing
-✅ "show my listings" -> fetchListings
+✅ "add 10 coins" -> updateBalance (needs confirmation)
+✅ "create listing for moon" -> createListing (needs confirmation)
+✅ "show my listings" -> fetchListings (immediate)
+✅ "browse all listings" -> fetchListings (immediate)
+✅ "show listings" -> fetchListings (immediate)
+✅ "buy listing xyz" -> buyListing (needs confirmation)
 ❌ "thanks" -> None
 ❌ "cool" -> None
 ❌ "that's great" -> None
@@ -35,10 +55,11 @@ Response format:
 {
   "chatResponse": "Your natural conversational response",
   "action": {
-    "type": "updateBalance|createListing|fetchListings|confirmAction|None",
+    "type": "updateBalance|createListing|fetchListings|buyListing|confirmAction|None",
     "data": {
       // action specific data
-    }
+    },
+    "status": "pending|confirmed" // Only for actions that need confirmation
   }
 }`;
 
@@ -72,15 +93,36 @@ export async function analyzeMessage(message, conversation, user) {
       };
     }
 
-    // Get the last message and its action
-    const lastMessage = conversation.messages[conversation.messages.length - 1];
-    const lastAction = lastMessage?.analysis?.action;
-
-    // If the last message was an action and current message is short/acknowledgment
-    if (lastAction && isSimpleResponse) {
+    // Check for browse/show listings commands - these should execute immediately
+    const isBrowseCommand = /^(browse|show|see|view)\s+(all\s+)?listings?$/i.test(message.trim());
+    if (isBrowseCommand) {
       return {
-        chatResponse: "You're welcome! Is there anything else I can help you with?",
-        action: { type: 'None' }
+        chatResponse: "Here are the available listings:",
+        action: {
+          type: "fetchListings",
+          data: { type: "all" }
+        }
+      };
+    }
+
+    // Check for buy requests
+    const buyMatch = message.match(/^(?:buy|purchase)\s+(?:the\s+)?(.+?)(?:\s+for\s+(\d+)\s+tokens?)?$/i);
+    if (buyMatch) {
+      const [_, itemDescription, priceStr] = buyMatch;
+      const price = priceStr ? parseInt(priceStr) : null;
+      
+      return {
+        chatResponse: price 
+          ? `Would you like to purchase the item matching "${itemDescription}" for ${price} tokens? Please confirm.`
+          : `Would you like to purchase the item matching "${itemDescription}"? Please confirm.`,
+        action: {
+          type: "buyListing",
+          data: {
+            listingId: itemDescription, // Now used as a search query
+            price: price
+          },
+          status: "pending"
+        }
       };
     }
 
@@ -127,6 +169,15 @@ export async function analyzeMessage(message, conversation, user) {
     try {
       const jsonMatch = response.content.match(/\{[\s\S]*\}/);
       analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+
+      // Format the chat response if it's JSON
+      if (analysis && typeof analysis.chatResponse === 'string') {
+        // Remove any JSON formatting artifacts
+        analysis.chatResponse = analysis.chatResponse
+          .replace(/^\{.*"chatResponse":\s*"|"\s*,\s*"action".*\}$/g, '')
+          .replace(/\\n/g, '\n')
+          .trim();
+      }
     } catch (e) {
       console.error('Failed to parse AI response as JSON:', e);
       return {

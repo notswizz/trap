@@ -129,32 +129,57 @@ export async function handleCreateListing(userId, data) {
   return listing;
 }
 
-export async function handleListingTransfer(listingId, fromUserId, toUserId, price, reason = 'sale') {
+export async function handleListingTransfer(listingId, fromUserId, toUserId, price, reason = 'sale', session = null) {
   const { db } = await connectToDatabase();
+  const options = session ? { session } : {};
 
-  // Get the listing
-  const listing = await db.collection('listings').findOne({
-    _id: new ObjectId(listingId)
-  });
+  // Convert string IDs to ObjectIds
+  const listingObjectId = new ObjectId(listingId);
+  const fromUserObjectId = new ObjectId(fromUserId);
+  const toUserObjectId = new ObjectId(toUserId);
+
+  // Get the listing with session
+  const listing = await db.collection('listings').findOne(
+    { 
+      _id: listingObjectId,
+      status: 'active'
+    },
+    options
+  );
 
   if (!listing) {
-    throw new Error('Listing not found');
+    throw new Error('Listing not found or not active');
   }
 
-  // Get both users' info
+  // Get both users' info with session
   const [fromUser, toUser] = await Promise.all([
     db.collection('users').findOne(
-      { _id: new ObjectId(fromUserId) },
-      { projection: { username: 1, displayName: 1 } }
+      { _id: fromUserObjectId },
+      { ...options, projection: { username: 1, displayName: 1 } }
     ),
     db.collection('users').findOne(
-      { _id: new ObjectId(toUserId) },
-      { projection: { username: 1, displayName: 1 } }
+      { _id: toUserObjectId },
+      { ...options, projection: { username: 1, displayName: 1 } }
     )
   ]);
 
   if (!fromUser || !toUser) {
     throw new Error('One or both users not found');
+  }
+
+  // Log ownership details for debugging
+  console.log('Transfer ownership check:', {
+    listingId: listingObjectId.toString(),
+    listingUserId: listing.userId.toString(),
+    fromUserId: fromUserObjectId.toString(),
+    fromUsername: fromUser.username,
+    currentOwnerUsername: listing.currentOwnerUsername,
+    status: listing.status
+  });
+
+  // Verify current ownership by comparing ObjectId values and username
+  if (!listing.userId.equals(fromUserObjectId) || listing.currentOwnerUsername !== fromUser.username) {
+    throw new Error(`Ownership verification failed. Current owner: ${listing.currentOwnerUsername}`);
   }
 
   const transaction = {
@@ -176,32 +201,45 @@ export async function handleListingTransfer(listingId, fromUserId, toUserId, pri
     previousOwner: fromUser.username
   };
 
-  // Update the listing
+  // Update the listing with atomic operation
   const result = await db.collection('listings').findOneAndUpdate(
     { 
-      _id: new ObjectId(listingId),
-      currentOwnerUsername: fromUser.username // Ensure current owner is seller
+      _id: listingObjectId,
+      userId: fromUserObjectId,
+      status: 'active',
+      currentOwnerUsername: fromUser.username
     },
     {
       $set: {
+        userId: toUserObjectId,
         currentOwnerUsername: toUser.username,
         currentOwnerDisplayName: toUser.displayName,
-        userId: new ObjectId(toUserId), // Update owner ID
-        price: price // Update current price
+        price: price,
+        status: 'active',
+        updatedAt: new Date()
       },
       $push: {
         transactions: transaction,
         ownershipHistory: ownershipRecord
       }
     },
-    { returnDocument: 'after' }
+    { 
+      returnDocument: 'after'
+    }
   );
 
-  if (!result.value) {
-    throw new Error('Failed to transfer listing ownership');
+  // Simpler check - if we got a result back, it worked
+  if (!result) {
+    console.error('Transfer failed:', {
+      listingId: listingObjectId.toString(),
+      fromUserId: fromUserObjectId.toString(),
+      toUserId: toUserObjectId.toString(),
+      currentOwner: listing.currentOwnerUsername
+    });
+    throw new Error('Transfer failed - listing may have been modified');
   }
 
-  return result.value;
+  return result;
 }
 
 export async function handleFetchListings(userId, data) {
@@ -271,6 +309,209 @@ export async function handleFetchListings(userId, data) {
   }
 }
 
+async function findBestMatchingListing(searchQuery, db, session = null) {
+  const options = session ? { session } : {};
+  
+  // First try exact ID match
+  if (ObjectId.isValid(searchQuery)) {
+    const exactMatch = await db.collection('listings').findOne({ 
+      _id: new ObjectId(searchQuery),
+      status: 'active'
+    }, options);
+    if (exactMatch) return exactMatch;
+  }
+
+  // Then try title/description search
+  const listings = await db.collection('listings').find({
+    status: 'active',
+    $or: [
+      { title: { $regex: searchQuery, $options: 'i' } },
+      { description: { $regex: searchQuery, $options: 'i' } }
+    ]
+  }, options).toArray();
+
+  if (listings.length === 0) {
+    return null;
+  }
+
+  // Score matches based on similarity
+  const scores = listings.map(listing => {
+    const titleScore = (listing.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ? 2 : 0;
+    const descScore = (listing.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ? 1 : 0;
+    return {
+      listing,
+      score: titleScore + descScore
+    };
+  });
+
+  // Return the best match
+  scores.sort((a, b) => b.score - a.score);
+  return scores[0].listing;
+}
+
+class InsufficientBalanceError extends Error {
+  constructor(actualPrice, currentBalance) {
+    const needed = actualPrice - currentBalance;
+    super(JSON.stringify({
+      type: 'INSUFFICIENT_BALANCE',
+      message: `Insufficient balance for purchase`,
+      details: {
+        cost: actualPrice,
+        balance: currentBalance,
+        needed: needed
+      }
+    }));
+    this.name = 'InsufficientBalanceError';
+  }
+}
+
+export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
+  const { db, client } = await connectToDatabase();
+  const session = await client.startSession();
+  
+  try {
+    return await session.withTransaction(async () => {
+      // Find best matching listing with session
+      const listing = await findBestMatchingListing(listingIdOrQuery, db, session);
+
+      if (!listing) {
+        throw new Error('No matching active listing found. Please check the listing details and try again.');
+      }
+
+      // Verify price matches if specified
+      if (price && listing.price !== price) {
+        throw new Error(`Price mismatch. Listing price is ${listing.price} tokens.`);
+      }
+
+      const actualPrice = price || listing.price;
+      const sellerId = listing.userId.toString();
+
+      // Verify buyer isn't seller
+      if (sellerId === buyerId) {
+        throw new Error('You cannot buy your own listing');
+      }
+
+      // Get buyer info and verify sufficient balance
+      const buyer = await db.collection('users').findOne(
+        { _id: new ObjectId(buyerId) },
+        { session }
+      );
+
+      if (!buyer) {
+        throw new Error('Buyer account not found');
+      }
+
+      if ((buyer.balance || 0) < actualPrice) {
+        throw new InsufficientBalanceError(actualPrice, buyer.balance || 0);
+      }
+
+      // Get seller info to verify they still exist
+      const seller = await db.collection('users').findOne(
+        { _id: new ObjectId(sellerId) },
+        { session }
+      );
+
+      if (!seller) {
+        throw new Error('Seller account not found');
+      }
+
+      // Verify listing ownership hasn't changed
+      if (listing.currentOwnerUsername !== seller.username) {
+        throw new Error('Listing ownership has changed since your request');
+      }
+
+      // Log transaction details for debugging
+      console.log('Buy transaction:', {
+        listingId: listing._id.toString(),
+        buyerId,
+        sellerId,
+        price: actualPrice,
+        buyerBalance: buyer.balance,
+        sellerUsername: seller.username,
+        currentOwner: listing.currentOwnerUsername
+      });
+
+      // 1. Update buyer's balance first (subtract)
+      const buyerUpdate = await db.collection('users').updateOne(
+        { _id: new ObjectId(buyerId) },
+        { 
+          $inc: { balance: -actualPrice },
+          $push: {
+            transactions: {
+              amount: -actualPrice,
+              reason: `Purchase of listing: ${listing.title}`,
+              timestamp: new Date(),
+              previousBalance: buyer.balance,
+              newBalance: buyer.balance - actualPrice
+            }
+          }
+        },
+        { session }
+      );
+
+      if (buyerUpdate.modifiedCount !== 1) {
+        throw new Error('Failed to update buyer balance');
+      }
+
+      // 2. Update seller's balance (add)
+      const sellerUpdate = await db.collection('users').updateOne(
+        { _id: new ObjectId(sellerId) },
+        { 
+          $inc: { balance: actualPrice },
+          $push: {
+            transactions: {
+              amount: actualPrice,
+              reason: `Sale of listing: ${listing.title}`,
+              timestamp: new Date(),
+              previousBalance: seller.balance,
+              newBalance: seller.balance + actualPrice
+            }
+          }
+        },
+        { session }
+      );
+
+      if (sellerUpdate.modifiedCount !== 1) {
+        throw new Error('Failed to update seller balance');
+      }
+
+      // 3. Transfer listing ownership last
+      const transferResult = await handleListingTransfer(
+        listing._id.toString(),
+        sellerId,
+        buyerId,
+        actualPrice,
+        'purchase',
+        session
+      );
+
+      if (!transferResult) {
+        throw new Error('Failed to transfer listing ownership');
+      }
+
+      return { 
+        success: true, 
+        message: 'Purchase completed successfully',
+        listing: listing.title,
+        price: actualPrice,
+        seller: seller.username
+      };
+    }, {
+      readConcern: { level: 'majority' },
+      writeConcern: { w: 'majority' }
+    });
+  } catch (error) {
+    if (error.name === 'InsufficientBalanceError') {
+      // Pass through the structured error
+      throw error;
+    }
+    console.error('Purchase error:', error);
+    throw new Error('Unable to complete purchase. Please try again.');
+  } finally {
+    await session.endSession();
+  }
+}
+
 export async function executeAction(type, userId, data) {
   try {
     switch (type) {
@@ -282,6 +523,19 @@ export async function executeAction(type, userId, data) {
         return await handleListingTransfer(data.listingId, userId, data.toUserId, data.price, data.reason);
       case 'fetchListings':
         return await handleFetchListings(userId, data);
+      case 'buyListing':
+        try {
+          return await handleBuyListing(userId, data.listingId, data.price);
+        } catch (error) {
+          if (error.name === 'InsufficientBalanceError') {
+            const errorData = JSON.parse(error.message);
+            return {
+              success: false,
+              error: errorData
+            };
+          }
+          throw error;
+        }
       case 'None':
         return null;
       default:
