@@ -12,6 +12,7 @@ export default function ChatBot({ onMessageSent }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [completedActions, setCompletedActions] = useState(new Set());
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState(null);
 
   useEffect(() => {
     fetchConversations();
@@ -158,6 +159,7 @@ export default function ChatBot({ onMessageSent }) {
       }
 
       setMessages(prev => [...prev, ...newMessages]);
+      setLastMessageTimestamp(new Date().getTime());
 
       if (onMessageSent) {
         await onMessageSent();
@@ -242,7 +244,10 @@ export default function ChatBot({ onMessageSent }) {
 
   return (
     <div className="h-[calc(100vh-8rem)] sm:h-[calc(100vh-12rem)] max-h-[800px] flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
-      <ChatHeader onNewChat={handleNewChat} />
+      <ChatHeader 
+        onNewChat={handleNewChat} 
+        onMessageSent={lastMessageTimestamp} 
+      />
       <ChatMessages
         messages={messages}
         isLoading={isLoading}
