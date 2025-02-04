@@ -123,16 +123,19 @@ export default withAuth(async function handler(req, res) {
     // Save user message
     await saveMessageToConversation(conversation._id, {
       role: 'user',
-      content: message.trim(),
+      content: { text: message.trim() },
       timestamp: new Date()
     });
 
     // Analyze with minimal context
     const analysis = await analyzeMessage(
-      message,
+      typeof message === 'object' ? message.text : message,
       {
         ...conversation,
-        messages: conversation.messages.slice(-5)
+        messages: conversation.messages.map(msg => ({
+          ...msg,
+          content: typeof msg.content === 'object' ? msg.content.text : msg.content
+        })).slice(-5)
       },
       req.user
     );
@@ -164,7 +167,7 @@ export default withAuth(async function handler(req, res) {
     // Save AI response
     await saveMessageToConversation(conversation._id, {
       role: 'assistant',
-      content: analysis.chatResponse,
+      content: { text: analysis.chatResponse },
       analysis: analysis.action ? {
         action: analysis.action,
         actionExecuted: !!actionResult,

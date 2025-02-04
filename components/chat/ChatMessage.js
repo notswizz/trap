@@ -22,7 +22,20 @@ export default function ChatMessage({
         <div className={`whitespace-pre-wrap text-sm sm:text-md leading-relaxed ${
           message.isAction ? 'font-medium' : ''
         }`}>
-          {message.content}
+          {message.isWelcome ? (
+            <div className="flex flex-col gap-2">
+              <div className="text-lg font-medium bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                {message.content.text}
+              </div>
+              <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 w-fit">
+                {message.content.tokens.toLocaleString()} tokens
+              </div>
+            </div>
+          ) : (
+            <div>
+              {typeof message.content === 'string' ? message.content : message.content.text}
+            </div>
+          )}
         </div>
         
         {message.isAction && message.isPending && (

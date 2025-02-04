@@ -15,7 +15,7 @@ export default function ChatBot({ onMessageSent }) {
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState(null);
 
   useEffect(() => {
-    fetchConversations();
+    handleNewChat();  // Create a new chat immediately on mount
   }, []);
 
   useEffect(() => {
@@ -37,9 +37,6 @@ export default function ChatBot({ onMessageSent }) {
 
       const data = await res.json();
       setConversations(data.conversations);
-      if (data.conversations.length > 0) {
-        setCurrentConversationId(data.conversations[0]._id);
-      }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
       setError('Failed to load conversations');
@@ -81,12 +78,7 @@ export default function ChatBot({ onMessageSent }) {
       const data = await res.json();
       setConversations(prev => [data.conversation, ...prev]);
       setCurrentConversationId(data.conversation._id);
-      
-      setMessages([{
-        role: 'assistant',
-        content: `Hello! I'm your AI assistant. How can I help you today?`,
-        timestamp: new Date()
-      }]);
+      setMessages(data.conversation.messages);
     } catch (err) {
       console.error('Failed to create new conversation:', err);
       setError('Failed to create new chat');

@@ -13,56 +13,20 @@ export default withAuth(async function handler(req, res) {
     }
   } else if (req.method === 'POST') {
     try {
-      // Get user's previous conversations
-      const previousConversations = await getUserConversations(req.user._id);
-
-      // Create welcome message prompt based on history
-      const welcomePrompt = `You are a helpful AI assistant in a chat-based economy game.
-Current user: ${req.user.displayName}
-Current balance: ${req.user.balance || 0} tokens
-Chat history: ${previousConversations.length} previous conversations
-
-Generate a personalized welcome message. If they're a returning user, acknowledge their previous interactions.
-Consider their current balance and any patterns in their previous conversations.
-Keep it friendly and concise.
-
-Response format:
-{
-  "chatResponse": "Your personalized welcome message"
-}`;
-
-      // Get AI welcome message
-      const response = await getChatResponse([
-        {
-          role: 'system',
-          content: welcomePrompt
-        },
-        // Include all messages from previous conversations for context
-        ...previousConversations.flatMap(conv => 
-          conv.messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
-        )
-      ], false);
-
-      let welcomeMessage;
-      try {
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-        const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-        welcomeMessage = analysis?.chatResponse || "Hello! I'm your AI assistant. How can I help you today?";
-      } catch (e) {
-        console.error('Failed to parse welcome message:', e);
-        welcomeMessage = "Hello! I'm your AI assistant. How can I help you today?";
-      }
-
       // Create new conversation
       const conversation = await createConversation(req.user._id);
 
-      // Add personalized welcome message
+      // Add welcome message with badge format for tokens
+      const welcomeMessage = {
+        text: `Hello ${req.user.displayName || 'there'}, welcome to gptSILK -- the infinite AI marketplace awaits...`,
+        tokens: req.user.balance || 0
+      };
+
+      // Add welcome message to conversation
       await saveMessageToConversation(conversation._id, {
         role: 'assistant',
         content: welcomeMessage,
+        isWelcome: true
       });
 
       // Return the conversation with the welcome message
@@ -71,6 +35,7 @@ Response format:
         messages: [{
           role: 'assistant',
           content: welcomeMessage,
+          isWelcome: true,
           timestamp: new Date()
         }]
       };

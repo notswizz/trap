@@ -7,6 +7,12 @@ const venice = new OpenAI({
 
 export async function getChatResponse(messages, includeVenicePrompt = true) {
   try {
+    // Format messages to ensure they're in the correct format
+    const formattedMessages = messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'object' ? msg.content.text : msg.content
+    }));
+
     const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -18,9 +24,9 @@ export async function getChatResponse(messages, includeVenicePrompt = true) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful AI assistant in a chat-based economy game. Help users earn and manage their virtual currency through engaging conversations and tasks."
+            content: "You are a helpful AI assistant in a chat-based economy game. Help users earn and manage their virtual tokens and listings through engaging conversations."
           },
-          ...messages
+          ...formattedMessages
         ],
         venice_parameters: {
           include_venice_system_prompt: includeVenicePrompt
@@ -31,6 +37,7 @@ export async function getChatResponse(messages, includeVenicePrompt = true) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Venice API Error Response:', data);
       throw new Error(data.error?.message || 'Failed to get AI response');
     }
 
