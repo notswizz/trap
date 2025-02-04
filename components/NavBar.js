@@ -9,14 +9,24 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
   return (
     <header className="bg-white/70 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">
-          <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent font-black">
-            gpt
-          </span>
-          <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent font-black">
-            SILK
-          </span>
-        </h1>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <h1 className="text-lg sm:text-2xl font-bold">
+            <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent font-black">
+              gpt
+            </span>
+            <span className="bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent font-black">
+              SILK
+            </span>
+          </h1>
+          <div className="h-4 sm:h-6 w-px bg-gradient-to-b from-purple-200 to-emerald-200" />
+          <p className="flex items-center text-[9px] sm:text-xs font-medium tracking-wide
+            bg-gradient-to-r from-purple-400 via-emerald-400 to-indigo-400 
+            bg-clip-text text-transparent uppercase gap-0.5 sm:gap-1">
+            <span className="text-sm sm:text-base">∞</span> 
+            <span>infinite AI economy</span>
+          </p>
+        </div>
+
         {user ? (
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-full border border-emerald-200 shadow-sm">
@@ -42,7 +52,7 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
           <button
             onClick={onLogin}
             aria-label="Open authentication modal" 
-            className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-emerald-300 to-emerald-500 text-white text-sm sm:text-base font-medium
+            className="px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-gradient-to-r from-emerald-300 to-emerald-500 text-white text-sm sm:text-base font-medium
             hover:shadow-xl hover:shadow-emerald-500/20
             active:shadow-md active:translate-y-0.5 
             transition-all duration-300 transform hover:-translate-y-1
