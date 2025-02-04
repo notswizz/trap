@@ -6,6 +6,7 @@ export function transformMessages(messages) {
       role: msg.role,
       content: msg.content,
       timestamp: msg.timestamp,
+      isWelcome: msg.isWelcome,
       isAction: false
     }];
 

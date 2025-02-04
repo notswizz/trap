@@ -18,7 +18,7 @@ export default withAuth(async function handler(req, res) {
 
       // Add welcome message with badge format for tokens
       const welcomeMessage = {
-        text: `Hello ${req.user.displayName || 'there'}, welcome to gptSILK -- the infinite AI marketplace awaits...`,
+        text: `Welcome to the marketplace`,
         tokens: req.user.balance || 0
       };
 

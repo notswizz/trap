@@ -19,7 +19,7 @@ export default function ChatBot({ onMessageSent }) {
   }, []);
 
   useEffect(() => {
-    if (currentConversationId) {
+    if (currentConversationId && !isLoading) {
       fetchMessages(currentConversationId);
     }
   }, [currentConversationId]);
@@ -78,7 +78,7 @@ export default function ChatBot({ onMessageSent }) {
       const data = await res.json();
       setConversations(prev => [data.conversation, ...prev]);
       setCurrentConversationId(data.conversation._id);
-      setMessages(data.conversation.messages);
+      setMessages(transformMessages(data.conversation.messages));
     } catch (err) {
       console.error('Failed to create new conversation:', err);
       setError('Failed to create new chat');
