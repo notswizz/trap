@@ -89,19 +89,21 @@ export default function NotificationHistory({ isOpen, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-start sm:items-center justify-center p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl w-full max-w-2xl my-4 sm:my-8 shadow-xl relative flex flex-col max-h-[85vh] sm:max-h-[90vh]">
+      <div className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-2xl my-4 sm:my-8 shadow-2xl relative flex flex-col max-h-[85vh] sm:max-h-[90vh] border border-white/20 animate-slideIn">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between bg-white/50 backdrop-blur-xl sticky top-0 z-10 rounded-t-3xl">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Notification History</h2>
+            <h2 className="text-2xl font-black bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+              Notifications
+            </h2>
             {pagination.unreadCount > 0 && (
-              <p className="text-sm text-gray-500">
-                {pagination.unreadCount} unread notifications
+              <p className="text-sm font-medium text-gray-500 mt-0.5">
+                {pagination.unreadCount} unread {pagination.unreadCount === 1 ? 'notification' : 'notifications'}
               </p>
             )}
           </div>
@@ -110,15 +112,24 @@ export default function NotificationHistory({ isOpen, onClose }) {
               <button
                 onClick={clearNotifications}
                 disabled={clearing}
-                className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 
-                  hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 
+                  hover:bg-red-50 rounded-full transition-all duration-300 disabled:opacity-50
+                  border border-red-200 hover:border-red-300 shadow-sm hover:shadow-md"
               >
-                {clearing ? 'Clearing...' : 'Clear All'}
+                {clearing ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                    Clearing...
+                  </span>
+                ) : (
+                  'Clear All'
+                )}
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-all duration-300 hover:rotate-90
+                border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -128,30 +139,37 @@ export default function NotificationHistory({ isOpen, onClose }) {
         </div>
 
         {/* Notification List */}
-        <div className="overflow-y-auto flex-1 min-h-0">
+        <div className="overflow-y-auto flex-1 min-h-0 px-2">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-purple-400 border-t-transparent shadow-lg"></div>
+              <p className="text-gray-500 font-medium animate-pulse">Loading notifications...</p>
             </div>
           ) : notifications.length > 0 ? (
-            <div className="divide-y divide-gray-100">
-              {notifications.map(notification => (
+            <div className="divide-y divide-gray-100/50 py-2">
+              {notifications.map((notification, index) => (
                 <div 
                   key={notification._id}
-                  className={`p-4 hover:bg-gray-50 transition-colors ${
-                    !notification.read ? 'bg-indigo-50/50' : ''
-                  }`}
+                  className={`p-4 hover:bg-gray-50/50 transition-all duration-300 rounded-2xl my-2
+                    ${!notification.read ? 'bg-indigo-50/50 hover:bg-indigo-50/70' : ''}
+                    animate-fadeIn`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full ${getNotificationColor(notification.type)} 
-                      text-white flex items-center justify-center text-lg shadow-lg`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-2xl ${getNotificationColor(notification.type)} 
+                      text-white flex items-center justify-center text-xl shadow-lg
+                      border border-white/20 backdrop-blur-sm transform hover:scale-110 transition-transform duration-300`}>
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-base font-medium text-gray-900 leading-relaxed">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs font-medium text-gray-500 mt-1.5 flex items-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         {format(new Date(notification.createdAt), 'MMM d, yyyy h:mm a')}
                       </p>
                     </div>
@@ -160,31 +178,37 @@ export default function NotificationHistory({ isOpen, onClose }) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              No notifications found
+            <div className="text-center py-12 px-4">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-2xl">🔔</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">No notifications</h3>
+              <p className="text-gray-500">We'll notify you when something important happens!</p>
             </div>
           )}
         </div>
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-white sticky bottom-0">
+          <div className="px-6 py-4 border-t border-gray-200/50 flex items-center justify-between bg-white/50 backdrop-blur-xl sticky bottom-0 rounded-b-3xl">
             <button
               onClick={() => fetchNotifications(pagination.currentPage - 1)}
               disabled={pagination.currentPage === 1}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md
-                hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full
+                hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300
+                hover:shadow-md disabled:hover:shadow-none"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm font-medium text-gray-600">
               Page {pagination.currentPage} of {pagination.pages}
             </span>
             <button
               onClick={() => fetchNotifications(pagination.currentPage + 1)}
               disabled={pagination.currentPage === pagination.pages}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md
-                hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full
+                hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300
+                hover:shadow-md disabled:hover:shadow-none"
             >
               Next
             </button>

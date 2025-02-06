@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import NotificationHistory from './NotificationHistory';
 
-export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
+export default function NavBar({ isLoggedIn, user, onLogout, onLogin, onShowNotifications }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -42,26 +42,6 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
     }
   };
 
-  const handleNotificationClick = () => {
-    // Find the chat input
-    const chatInput = document.querySelector('.chat-input');
-    if (chatInput) {
-      // Set the input value to request notifications
-      chatInput.value = 'show my notifications';
-      // Create and dispatch an input event
-      const inputEvent = new Event('input', { bubbles: true });
-      chatInput.dispatchEvent(inputEvent);
-      // Create and dispatch a submit event
-      const form = chatInput.closest('form');
-      if (form) {
-        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-        form.dispatchEvent(submitEvent);
-      }
-      // Focus the input
-      chatInput.focus();
-    }
-  };
-
   return (
     <header className="bg-white/70 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
@@ -89,7 +69,7 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Notification Bell */}
             <button
-              onClick={handleNotificationClick}
+              onClick={onShowNotifications}
               className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

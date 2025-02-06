@@ -223,13 +223,6 @@ export default withAuth(async function handler(req, res) {
         actionExecuted: !!actionResult,
         actionResult: actionResult
       };
-
-      // For notifications, add them directly to the message
-      if (analysis.action.type === 'fetchNotifications' && actionResult?.notifications) {
-        aiMessage.notifications = actionResult.notifications;
-        // Also add to content for redundancy
-        aiMessage.content.notifications = actionResult.notifications;
-      }
     }
 
     console.log('Saving AI message:', JSON.stringify(aiMessage, null, 2));
@@ -246,11 +239,6 @@ export default withAuth(async function handler(req, res) {
         displayName: req.user.displayName
       }
     };
-
-    // Add notifications to response if they exist
-    if (actionResult?.notifications) {
-      response.notifications = actionResult.notifications;
-    }
 
     res.status(200).json(response);
   } catch (error) {

@@ -339,14 +339,10 @@ export default function ChatMessage({
             </div>
           ) : message.analysis?.action?.type === 'fetchNotifications' ? (
             <div className="space-y-2">
-              {console.log('Notification message:', {
-                action: message.analysis.action,
-                result: message.analysis.actionResult,
+              {console.log('Rendering notification message:', {
                 content: message.content,
-                notifications: message.notifications || 
-                            message.analysis.actionResult?.notifications || 
-                            message.content?.notifications ||
-                            message.content?.actionResult?.notifications
+                actionResult: message.analysis?.actionResult,
+                notifications: message.analysis?.actionResult?.notifications
               })}
               
               {/* Display the message text */}
@@ -355,18 +351,10 @@ export default function ChatMessage({
               </div>
               <div className="h-1 w-16 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-indigo-600/10 rounded-full" />
               
-              {/* Get notifications from all possible locations */}
+              {/* Get notifications from actionResult */}
               {(() => {
-                const notifications = message.notifications || 
-                                    message.analysis.actionResult?.notifications || 
-                                    message.content?.notifications ||
-                                    message.content?.actionResult?.notifications;
-                
-                console.log('Found notifications:', notifications);
-
-                if (!notifications) {
-                  console.log('No notifications found in message:', message);
-                }
+                const notifications = message.analysis?.actionResult?.notifications || [];
+                console.log('Processing notifications:', notifications);
 
                 if (notifications?.length > 0) {
                   return (
@@ -374,88 +362,40 @@ export default function ChatMessage({
                       {notifications.map((notification, index) => {
                         console.log('Processing notification:', notification);
                         
-                        // Helper function to handle MongoDB number format
-                        const getNumber = (value) => {
-                          if (!value) return 0;
-                          if (typeof value === 'object' && '$numberInt' in value) {
-                            return parseInt(value.$numberInt);
-                          }
-                          if (typeof value === 'number') return value;
-                          return 0;
-                        };
-
-                        // Helper function to handle MongoDB date format
-                        const getDate = (value) => {
-                          if (!value) return new Date();
-                          if (typeof value === 'object') {
-                            if ('$date' in value && typeof value.$date === 'object' && '$numberLong' in value.$date) {
-                              return new Date(parseInt(value.$date.$numberLong));
-                            }
-                          }
-                          return new Date(value);
-                        };
-
-                        // Helper function to handle MongoDB ObjectId
-                        const getId = (value) => {
-                          if (!value) return '';
-                          if (typeof value === 'object' && '$oid' in value) {
-                            return value.$oid;
-                          }
-                          return value.toString();
-                        };
-
-                        // Extract data safely
-                        const notificationData = {
-                          id: getId(notification._id),
-                          type: notification.type,
-                          message: notification.message,
-                          data: {
-                            listingId: getId(notification.data?.listingId),
-                            listingTitle: notification.data?.listingTitle,
-                            price: getNumber(notification.data?.price),
-                            sellerUsername: notification.data?.sellerUsername,
-                            newBalance: getNumber(notification.data?.newBalance),
-                            amount: getNumber(notification.data?.amount),
-                            previousBalance: getNumber(notification.data?.previousBalance)
-                          },
-                          read: !!notification.read,
-                          createdAt: getDate(notification.createdAt),
-                          shownAt: getDate(notification.shownAt),
-                          shownInChat: !!notification.shownInChat
-                        };
-
-                        console.log('Processed notification data:', notificationData);
+                        // Format date
+                        const createdAt = new Date(notification.createdAt);
+                        const timestamp = new Date(notification.data?.timestamp);
 
                         return (
-                          <div key={notificationData.id || index} 
+                          <div key={notification._id || index} 
                             className="group relative flex-none w-[300px] p-6 rounded-2xl transition-all duration-300 transform hover:-translate-y-1
                               bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md hover:shadow-lg"
                           >
                             <div className={`absolute -right-1 top-3 px-3 py-1 rounded-full text-xs font-semibold shadow-lg
-                              bg-gradient-to-r from-purple-500 to-indigo-500 text-white`}
+                              ${notification.type === 'LISTING_SOLD' 
+                                ? 'bg-gradient-to-r from-emerald-500 to-green-500'
+                                : notification.type === 'LISTING_PURCHASED'
+                                ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
+                                : 'bg-gradient-to-r from-blue-500 to-cyan-500'} text-white`}
                             >
-                              {notificationData.type === 'LISTING_SOLD' ? 'Sale' :
-                               notificationData.type === 'LISTING_PURCHASED' ? 'Purchase' :
+                              {notification.type === 'LISTING_SOLD' ? 'Sale' :
+                               notification.type === 'LISTING_PURCHASED' ? 'Purchase' :
                                'Balance Update'}
                             </div>
                             
                             <div className="space-y-4">
                               <div className="flex items-start gap-3">
                                 <div className={`flex-shrink-0 w-10 h-10 rounded-full 
-                                  ${notificationData.type === 'LISTING_SOLD' || notificationData.type === 'LISTING_PURCHASED'
+                                  ${notification.type === 'LISTING_SOLD'
                                     ? 'bg-gradient-to-r from-emerald-500 to-green-500'
-                                    : notificationData.type === 'LISTING_CREATED'
+                                    : notification.type === 'LISTING_PURCHASED'
                                     ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                                    : notificationData.type === 'BALANCE_UPDATE'
-                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
-                                    : 'bg-gradient-to-r from-gray-500 to-slate-500'
+                                    : 'bg-gradient-to-r from-blue-500 to-cyan-500'
                                   } text-white flex items-center justify-center text-lg shadow-lg`}
                                 >
                                   {notificationData.type === 'LISTING_SOLD' ? '💰'
                                     : notificationData.type === 'LISTING_PURCHASED' ? '🛍️'
-                                    : notificationData.type === 'LISTING_CREATED' ? '✨'
-                                    : notificationData.type === 'BALANCE_UPDATE' ? '💎'
-                                    : 'ℹ️'}
+                                    : '💎'}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-gray-900">
@@ -493,8 +433,8 @@ export default function ChatMessage({
                         />
                       </svg>
                     </div>
-                    <p className="text-gray-500 font-medium">No new notifications</p>
-                    <p className="text-sm text-gray-400 mt-1">All caught up! Check back later for updates.</p>
+                    <p className="text-gray-500 font-medium">No transactions found</p>
+                    <p className="text-sm text-gray-400 mt-1">Check back later for updates.</p>
                   </div>
                 );
               })()}

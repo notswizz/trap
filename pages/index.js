@@ -7,11 +7,13 @@ import ChatBot from '../components/chat/ChatBot';
 import Typewriter from 'typewriter-effect';
 import NavBar from '../components/NavBar';
 import HomeContent from '../components/Home';
+import NotificationHistory from '../components/NotificationHistory';
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [user, setUser] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     // Check localStorage for user data on component mount
@@ -108,6 +110,7 @@ export default function Home() {
           user={user} 
           onLogout={handleLogout}
           onLogin={toggleModal}
+          onShowNotifications={() => setShowNotifications(true)}
         />
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
@@ -130,6 +133,14 @@ export default function Home() {
             <SignUp onToggleForm={toggleForm} />
           )}
         </Modal>
+
+        {/* Notification History */}
+        {user && (
+          <NotificationHistory 
+            isOpen={showNotifications} 
+            onClose={() => setShowNotifications(false)} 
+          />
+        )}
       </div>
     </>
   );

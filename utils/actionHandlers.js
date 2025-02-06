@@ -590,8 +590,7 @@ export async function handleFetchNotifications(userId, data = {}) {
     
     // Get user's transactions
     const user = await db.collection('users').findOne(
-      { _id: new ObjectId(userId) },
-      { projection: { transactions: 1 } }
+      { _id: new ObjectId(userId) }
     );
 
     if (!user || !user.transactions) {
@@ -605,6 +604,12 @@ export async function handleFetchNotifications(userId, data = {}) {
 
     // Convert transactions to notifications format
     const notifications = user.transactions.map(transaction => {
+      // Handle MongoDB number format
+      const amount = transaction.amount?.$numberInt || transaction.amount || 0;
+      const previousBalance = transaction.previousBalance?.$numberInt || transaction.previousBalance || 0;
+      const newBalance = transaction.newBalance?.$numberInt || transaction.newBalance || 0;
+      
+      // Determine transaction type
       const isSale = transaction.reason?.includes('Sale of');
       const isPurchase = transaction.reason?.includes('Purchase of');
       let type = 'BALANCE_UPDATE';
@@ -612,24 +617,30 @@ export async function handleFetchNotifications(userId, data = {}) {
       if (isSale) type = 'LISTING_SOLD';
       if (isPurchase) type = 'LISTING_PURCHASED';
 
+      // Extract item name if it's a sale or purchase
+      let itemName = '';
+      if (transaction.reason) {
+        const match = transaction.reason.match(/(?:Sale|Purchase) of listing: (.+)$/);
+        if (match) itemName = match[1];
+      }
+
       return {
         _id: new ObjectId(),
         type,
         message: transaction.reason || 'Balance updated',
         data: {
-          amount: Math.abs(transaction.amount),
-          previousBalance: transaction.previousBalance,
-          newBalance: transaction.newBalance,
+          amount: Math.abs(amount),
+          previousBalance,
+          newBalance,
+          itemName,
           timestamp: transaction.timestamp
         },
-        read: false,
-        createdAt: transaction.timestamp || new Date(),
-        shownInChat: false
+        createdAt: transaction.timestamp || new Date()
       };
     });
 
     // Sort by most recent first
-    notifications.sort((a, b) => b.createdAt - a.createdAt);
+    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     // Limit to most recent if specified
     const limitedNotifications = data.limit ? notifications.slice(0, data.limit) : notifications;
