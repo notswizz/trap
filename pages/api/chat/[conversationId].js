@@ -154,12 +154,22 @@ export default withAuth(async function handler(req, res) {
         if (isImmediateAction) {
           // Execute immediate actions right away
           try {
+            console.log('Executing immediate action:', analysis.action.type);
             actionResult = await executeAction(
               analysis.action.type,
               req.user._id.toString(),
               analysis.action.data
             );
+            console.log('Action result:', actionResult);
             analysis.action.status = 'completed';
+
+            // For notifications, update the chat response to include count
+            if (analysis.action.type === 'fetchNotifications' && actionResult?.notifications) {
+              const count = actionResult.notifications.length;
+              analysis.chatResponse = count > 0 
+                ? `Found ${count} new notification${count === 1 ? '' : 's'}`
+                : 'No new notifications found';
+            }
           } catch (error) {
             console.error('Immediate action execution error:', error);
             return res.status(400).json({ 
@@ -189,26 +199,37 @@ export default withAuth(async function handler(req, res) {
       }
     }
 
-    // Save AI response
-    await saveMessageToConversation(conversation._id, {
+    // Save AI response with action result
+    const aiMessage = {
       role: 'assistant',
-      content: { text: analysis.chatResponse },
+      content: { 
+        text: analysis.chatResponse,
+        ...(actionResult && { actionResult }) // Include actionResult in content if it exists
+      },
+      timestamp: new Date(),
       user: {
         username: req.user.username,
         displayName: req.user.displayName
       },
       analysis: analysis.action ? {
-        action: analysis.action,
+        action: {
+          ...analysis.action,
+          status: actionResult ? 'completed' : analysis.action.status
+        },
         actionExecuted: !!actionResult,
         actionResult
       } : null
-    });
+    };
 
-    // Return response with action status
+    console.log('Saving AI message:', JSON.stringify(aiMessage, null, 2));
+    await saveMessageToConversation(conversation._id, aiMessage);
+
+    // Return response with action status and result
     res.status(200).json({
       message: analysis.chatResponse,
       action: analysis.action,
       actionResult,
+      actionExecuted: !!actionResult,
       user: {
         username: req.user.username,
         displayName: req.user.displayName

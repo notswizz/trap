@@ -342,108 +342,125 @@ export default function ChatMessage({
               {console.log('Notification message:', {
                 action: message.analysis.action,
                 result: message.analysis.actionResult,
-                notifications: message.analysis.actionResult?.notifications
+                content: message.content,
+                notifications: message.analysis.actionResult?.notifications || message.content?.actionResult?.notifications
               })}
-              {message.analysis.actionResult?.notifications?.length > 0 ? (
-                <>
-                  <div className="text-sm text-gray-500 mb-2">
-                    {message.analysis.actionResult.message}
-                  </div>
-                  <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4">
-                    {message.analysis.actionResult.notifications.map((notification, index) => {
-                      console.log('Rendering notification:', notification);
-                      
-                      // Helper function to handle MongoDB number format
-                      const getNumber = (value) => {
-                        if (value && typeof value === 'object' && '$numberInt' in value) {
-                          return parseInt(value.$numberInt);
-                        }
-                        return value;
-                      };
+              
+              {/* Display the message text */}
+              <div className="text-base sm:text-lg font-medium bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                {typeof message.content === 'string' ? message.content : message.content.text}
+              </div>
+              <div className="h-1 w-16 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-indigo-600/10 rounded-full" />
+              
+              {/* Get notifications from either actionResult or content */}
+              {(() => {
+                const notifications = message.analysis.actionResult?.notifications || 
+                                    message.content?.actionResult?.notifications;
+                
+                console.log('Processing notifications:', notifications);
 
-                      // Helper function to handle MongoDB date format
-                      const getDate = (value) => {
-                        if (value && typeof value === 'object') {
-                          if ('$date' in value) {
-                            return new Date(value.$date.$numberLong ? parseInt(value.$date.$numberLong) : value.$date);
+                if (notifications?.length > 0) {
+                  return (
+                    <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 mt-4">
+                      {notifications.map((notification, index) => {
+                        console.log('Processing notification:', notification);
+                        
+                        // Helper function to handle MongoDB number format
+                        const getNumber = (value) => {
+                          if (value && typeof value === 'object' && '$numberInt' in value) {
+                            return parseInt(value.$numberInt);
                           }
-                        }
-                        return new Date(value);
-                      };
+                          return value;
+                        };
 
-                      // Extract data safely
-                      const notificationData = {
-                        ...notification,
-                        data: {
-                          ...notification.data,
-                          price: getNumber(notification.data?.price),
-                          newBalance: getNumber(notification.data?.newBalance)
-                        },
-                        createdAt: getDate(notification.createdAt)
-                      };
+                        // Helper function to handle MongoDB date format
+                        const getDate = (value) => {
+                          if (value && typeof value === 'object') {
+                            if ('$date' in value) {
+                              return new Date(value.$date.$numberLong ? parseInt(value.$date.$numberLong) : value.$date);
+                            }
+                          }
+                          return new Date(value);
+                        };
 
-                      return (
-                        <div key={notification._id?.$oid || index} 
-                          className="group relative flex-none w-[300px] p-6 rounded-2xl transition-all duration-300 transform hover:-translate-y-1
-                            bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md hover:shadow-lg"
-                        >
-                          <div className={`absolute -right-1 top-3 px-3 py-1 rounded-full text-xs font-semibold shadow-lg
-                            bg-gradient-to-r from-purple-500 to-indigo-500 text-white`}
+                        // Extract data safely
+                        const notificationData = {
+                          ...notification,
+                          data: {
+                            ...notification.data,
+                            price: getNumber(notification.data?.price),
+                            newBalance: getNumber(notification.data?.newBalance)
+                          },
+                          createdAt: getDate(notification.createdAt)
+                        };
+
+                        console.log('Processed notification data:', notificationData);
+
+                        return (
+                          <div key={notification._id?.$oid || index} 
+                            className="group relative flex-none w-[300px] p-6 rounded-2xl transition-all duration-300 transform hover:-translate-y-1
+                              bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md hover:shadow-lg"
                           >
-                            New
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                              <div className={`flex-shrink-0 w-10 h-10 rounded-full 
-                                ${notificationData.type === 'LISTING_SOLD' || notificationData.type === 'LISTING_PURCHASED'
-                                  ? 'bg-gradient-to-r from-emerald-500 to-green-500'
-                                  : notificationData.type === 'LISTING_CREATED'
-                                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                                  : notificationData.type === 'BALANCE_UPDATE'
-                                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
-                                  : 'bg-gradient-to-r from-gray-500 to-slate-500'
-                                } text-white flex items-center justify-center text-lg shadow-lg`}
-                              >
-                                {notificationData.type === 'LISTING_SOLD' ? '💰'
-                                  : notificationData.type === 'LISTING_PURCHASED' ? '🛍️'
-                                  : notificationData.type === 'LISTING_CREATED' ? '✨'
-                                  : notificationData.type === 'BALANCE_UPDATE' ? '💎'
-                                  : 'ℹ️'}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {notificationData.message}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {notificationData.createdAt.toLocaleString()}
-                                </p>
-                                {notificationData.data?.price && (
-                                  <p className="text-xs font-medium text-emerald-600 mt-1">
-                                    {notificationData.data.price} tokens
+                            <div className={`absolute -right-1 top-3 px-3 py-1 rounded-full text-xs font-semibold shadow-lg
+                              bg-gradient-to-r from-purple-500 to-indigo-500 text-white`}
+                            >
+                              New
+                            </div>
+                            
+                            <div className="space-y-4">
+                              <div className="flex items-start gap-3">
+                                <div className={`flex-shrink-0 w-10 h-10 rounded-full 
+                                  ${notificationData.type === 'LISTING_SOLD' || notificationData.type === 'LISTING_PURCHASED'
+                                    ? 'bg-gradient-to-r from-emerald-500 to-green-500'
+                                    : notificationData.type === 'LISTING_CREATED'
+                                    ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
+                                    : notificationData.type === 'BALANCE_UPDATE'
+                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                                    : 'bg-gradient-to-r from-gray-500 to-slate-500'
+                                  } text-white flex items-center justify-center text-lg shadow-lg`}
+                                >
+                                  {notificationData.type === 'LISTING_SOLD' ? '💰'
+                                    : notificationData.type === 'LISTING_PURCHASED' ? '🛍️'
+                                    : notificationData.type === 'LISTING_CREATED' ? '✨'
+                                    : notificationData.type === 'BALANCE_UPDATE' ? '💎'
+                                    : 'ℹ️'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {notificationData.message}
                                   </p>
-                                )}
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {notificationData.createdAt.toLocaleString()}
+                                  </p>
+                                  {notificationData.data?.price && (
+                                    <p className="text-xs font-medium text-emerald-600 mt-1">
+                                      {notificationData.data.price} tokens
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="text-center py-8">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+                      <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" 
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 font-medium">No new notifications</p>
+                    <p className="text-sm text-gray-400 mt-1">All caught up! Check back later for updates.</p>
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
-                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" 
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 font-medium">No new notifications</p>
-                  <p className="text-sm text-gray-400 mt-1">All caught up! Check back later for updates.</p>
-                </div>
-              )}
+                );
+              })()}
             </div>
           ) : null}
         </div>
