@@ -23,25 +23,34 @@ export default function NotificationPoller() {
       // Show notifications as toasts
       notifications.forEach(notification => {
         let type = 'info';
+        let duration = 5000; // Default duration
         
         switch (notification.type) {
           case 'LISTING_SOLD':
             type = 'success';
+            duration = 8000; // Important transactions show longer
             break;
           case 'LISTING_PURCHASED':
             type = 'success';
+            duration = 8000;
+            break;
+          case 'LISTING_CREATED':
+            type = 'success';
+            duration = 6000;
             break;
           case 'BALANCE_UPDATE':
-            type = 'info';
+            type = notification.data.amount > 0 ? 'success' : 'warning';
+            duration = 6000;
             break;
           default:
             type = 'info';
+            duration = 5000;
         }
 
         showToast({
           message: notification.message,
           type,
-          duration: 8000 // Show for 8 seconds
+          duration
         });
       });
 
@@ -54,8 +63,8 @@ export default function NotificationPoller() {
     // Check immediately on mount
     checkNotifications();
 
-    // Then check every 30 seconds
-    const interval = setInterval(checkNotifications, 30000);
+    // Then check every 15 seconds (reduced from 30 for more responsive notifications)
+    const interval = setInterval(checkNotifications, 15000);
 
     return () => clearInterval(interval);
   }, []);

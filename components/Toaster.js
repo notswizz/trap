@@ -33,6 +33,15 @@ export function ToastProvider({ children }) {
 
   return (
     <ToastContext.Provider value={{ showToast, hideToast }}>
+      <style jsx global>{`
+        @keyframes shrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        .toast-progress-bar {
+          animation: shrink var(--duration) linear forwards;
+        }
+      `}</style>
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map(toast => (
@@ -102,11 +111,8 @@ function Toast({ toast, onClose }) {
         {toast.duration !== Infinity && (
           <div className="absolute bottom-0 left-0 h-1 bg-white/20 w-full">
             <div 
-              className="h-full bg-white/40"
-              style={{
-                width: '100%',
-                animation: `shrink ${toast.duration}ms linear forwards`
-              }}
+              className="h-full bg-white/40 toast-progress-bar"
+              style={{ '--duration': `${toast.duration}ms` }}
             />
           </div>
         )}
@@ -132,14 +138,4 @@ function Toast({ toast, onClose }) {
       </div>
     </div>
   );
-}
-
-// Add keyframes for progress bar animation
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes shrink {
-    from { width: 100%; }
-    to { width: 0%; }
-  }
-`;
-document.head.appendChild(style); 
+} 

@@ -62,6 +62,20 @@ export async function handleUpdateBalance(userId, data) {
       throw new Error('Balance update failed');
     }
 
+    // Create notification for balance update
+    await createNotification(db, userId, {
+      type: 'BALANCE_UPDATE',
+      message: amount > 0 
+        ? `Added ${amount} tokens to your balance. New balance: ${newBalance} tokens`
+        : `Removed ${Math.abs(amount)} tokens from your balance. New balance: ${newBalance} tokens`,
+      data: {
+        amount,
+        previousBalance: currentUser.balance || 0,
+        newBalance,
+        reason: data.reason
+      }
+    });
+
     // Fetch the updated user
     const updatedUser = await db.collection('users').findOne(
       { _id: userObjectId },
@@ -126,6 +140,19 @@ export async function handleCreateListing(userId, data) {
   };
 
   await db.collection('listings').insertOne(listing);
+
+  // Create notification for listing creation
+  await createNotification(db, userId, {
+    type: 'LISTING_CREATED',
+    message: `Successfully created listing "${data.title}" for ${data.price} tokens`,
+    data: {
+      listingId: listing._id.toString(),
+      title: data.title,
+      price: data.price,
+      description: data.description
+    }
+  });
+
   return listing;
 }
 
