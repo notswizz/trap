@@ -106,9 +106,10 @@ export async function analyzeMessage(message, conversation, user) {
     }
 
     // Check for buy requests
-    const buyMatch = message.match(/^(?:buy|purchase)\s+(?:the\s+)?(.+?)(?:\s+for\s+(\d+)\s+tokens?)?$/i);
+    const buyMatch = message.match(/^(?:buy|purchase)\s+(?:the\s+)?(['"]([^'"]+)['"]|(\S+))(?:\s+for\s+(\d+)\s+tokens?)?$/i);
     if (buyMatch) {
-      const [_, itemDescription, priceStr] = buyMatch;
+      const [_, fullMatch, quotedItem, unquotedItem, priceStr] = buyMatch;
+      const itemDescription = quotedItem || unquotedItem;
       const price = priceStr ? parseInt(priceStr) : null;
       
       return {
@@ -118,7 +119,7 @@ export async function analyzeMessage(message, conversation, user) {
         action: {
           type: "buyListing",
           data: {
-            listingId: itemDescription, // Now used as a search query
+            listingId: itemDescription, // Used as search query
             price: price
           },
           status: "pending"

@@ -258,7 +258,7 @@ export default function ChatBot({ onMessageSent }) {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] sm:h-[calc(100vh-12rem)] max-h-[800px] flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
+    <div className="h-full flex flex-col bg-white shadow-xl sm:rounded-2xl overflow-hidden">
       <div className="flex flex-col h-full">
         <ChatHeader 
           onNewChat={handleNewChat}

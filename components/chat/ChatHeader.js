@@ -52,7 +52,7 @@ export default function ChatHeader({ onNewChat, onMessageSent }) {
             {error ? '❌' : '⚡️'}
           </span>
           <span className="text-xs sm:text-sm text-emerald-600 font-medium">
-            {error ? 'Error loading stats' : 'System Active'}
+            {error ? 'Error loading stats' : 'Active'}
           </span>
         </div>
         

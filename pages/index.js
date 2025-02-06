@@ -102,7 +102,7 @@ export default function Home() {
         
         
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
+      <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
         <NavBar 
           isLoggedIn={!!user} 
           user={user} 
@@ -110,11 +110,15 @@ export default function Home() {
           onLogin={toggleModal}
         />
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 overflow-hidden">
           {user ? (
-            <ChatBot onMessageSent={refreshUserData} />
+            <div className="h-full sm:max-w-7xl sm:mx-auto sm:px-4 md:px-6 lg:px-8 sm:py-8">
+              <ChatBot onMessageSent={refreshUserData} />
+            </div>
           ) : (
-            <HomeContent />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
+              <HomeContent />
+            </div>
           )}
         </main>
 

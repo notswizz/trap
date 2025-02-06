@@ -57,6 +57,7 @@ export default function ChatInput({ input, setInput, handleSubmit, isLoading, is
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onInput={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
           disabled={isLoading}
           className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200/80 bg-white/90 

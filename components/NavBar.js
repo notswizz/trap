@@ -29,10 +29,10 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
 
         {user ? (
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <div className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-full border border-emerald-200 shadow-sm">
-              <span className="text-gray-500 text-xs sm:text-sm mr-1 sm:mr-2 hidden sm:inline">Tokens:</span>
-              <span className="font-semibold text-sm sm:text-lg bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent">
-                {getBalance()}
+            <div className="flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-gray-600">
+              <span className="text-gray-400 text-xs sm:text-sm mr-1 hidden sm:inline">Tokens:</span>
+              <span className="font-medium text-sm sm:text-base">
+                {getBalance().toLocaleString()}
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-shadow">
