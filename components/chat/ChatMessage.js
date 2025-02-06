@@ -345,6 +345,7 @@ export default function ChatMessage({
                 content: message.content,
                 notifications: message.notifications || 
                             message.analysis.actionResult?.notifications || 
+                            message.content?.notifications ||
                             message.content?.actionResult?.notifications
               })}
               
@@ -358,9 +359,14 @@ export default function ChatMessage({
               {(() => {
                 const notifications = message.notifications || 
                                     message.analysis.actionResult?.notifications || 
+                                    message.content?.notifications ||
                                     message.content?.actionResult?.notifications;
                 
-                console.log('Processing notifications:', notifications);
+                console.log('Found notifications:', notifications);
+
+                if (!notifications) {
+                  console.log('No notifications found in message:', message);
+                }
 
                 if (notifications?.length > 0) {
                   return (

@@ -164,8 +164,9 @@ export default withAuth(async function handler(req, res) {
             analysis.action.status = 'completed';
 
             // For notifications, update the chat response to include count
-            if (analysis.action.type === 'fetchNotifications' && actionResult?.notifications) {
-              const count = actionResult.notifications.length;
+            if (analysis.action.type === 'fetchNotifications') {
+              const notifications = actionResult?.notifications || [];
+              const count = notifications.length;
               analysis.chatResponse = count > 0 
                 ? `Found ${count} new notification${count === 1 ? '' : 's'}`
                 : 'No new notifications found';
@@ -210,37 +211,49 @@ export default withAuth(async function handler(req, res) {
       user: {
         username: req.user.username,
         displayName: req.user.displayName
-      },
-      analysis: analysis.action ? {
+      }
+    };
+
+    // Add analysis and notifications if they exist
+    if (analysis.action) {
+      aiMessage.analysis = {
         action: {
           ...analysis.action,
           status: actionResult ? 'completed' : analysis.action.status
         },
         actionExecuted: !!actionResult,
-        actionResult: actionResult // Include in analysis as well for redundancy
-      } : null
-    };
+        actionResult: actionResult
+      };
 
-    // For notifications, add them directly to the message for easier access
-    if (analysis.action?.type === 'fetchNotifications' && actionResult?.notifications) {
-      aiMessage.notifications = actionResult.notifications;
+      // For notifications, add them directly to the message
+      if (analysis.action.type === 'fetchNotifications' && actionResult?.notifications) {
+        aiMessage.notifications = actionResult.notifications;
+        // Also add to content for redundancy
+        aiMessage.content.notifications = actionResult.notifications;
+      }
     }
 
     console.log('Saving AI message:', JSON.stringify(aiMessage, null, 2));
     await saveMessageToConversation(conversation._id, aiMessage);
 
     // Return response with action status and result
-    res.status(200).json({
+    const response = {
       message: analysis.chatResponse,
       action: analysis.action,
       actionResult,
       actionExecuted: !!actionResult,
-      notifications: actionResult?.notifications, // Include notifications in response
       user: {
         username: req.user.username,
         displayName: req.user.displayName
       }
-    });
+    };
+
+    // Add notifications to response if they exist
+    if (actionResult?.notifications) {
+      response.notifications = actionResult.notifications;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error('Chat error:', error);
     res.status(500).json({ message: error.message });
