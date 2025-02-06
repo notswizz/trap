@@ -59,7 +59,7 @@ export default function SignUp({ onToggleForm }) {
             SILK
           </span>
         </h2>
-        <p className="text-center text-gray-500">Create your account to start trading with AI</p>
+        <p className="text-center text-gray-500">Create your account to start trading</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">

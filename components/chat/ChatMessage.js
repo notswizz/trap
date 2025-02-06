@@ -190,11 +190,11 @@ export default function ChatMessage({
               ) : message.analysis.action.type === 'fetchListings' ? (
                 <div className="space-y-2">
                   {message.analysis.actionResult.listings?.length > 0 ? (
-                    <div className="grid gap-3">
+                    <div className="flex flex-nowrap gap-3 overflow-x-auto">
                       {message.analysis.actionResult.listings.map((listing, index) => (
-                        <div key={index} className="group relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div key={index} className="group relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-8 rounded-xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
                           {/* Listing Icon */}
-                          <div className="absolute -left-2 -top-2 w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-lg">
+                          <div className="absolute -left-0 -top-0 w-8 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-lg">
                             🏷️
                           </div>
                           
