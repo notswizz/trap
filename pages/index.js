@@ -84,7 +84,7 @@ export default function Home() {
         <meta name="description" content={pageDescription} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         
         {/* Open Graph Meta Tags */}
         <meta property="og:title" content="gptSILK - AI Infinite Marketplace" />
@@ -102,7 +102,7 @@ export default function Home() {
         
         
       </Head>
-      <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
+      <div className="h-[100dvh] flex flex-col overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
         <NavBar 
           isLoggedIn={!!user} 
           user={user} 
@@ -112,7 +112,7 @@ export default function Home() {
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
           {user ? (
-            <div className="h-full sm:max-w-7xl sm:mx-auto sm:px-4 md:px-6 lg:px-8 sm:py-8">
+            <div className="h-[calc(100%-1rem)] sm:h-full sm:max-w-7xl sm:mx-auto sm:px-4 md:px-6 lg:px-8 sm:py-8">
               <ChatBot onMessageSent={refreshUserData} />
             </div>
           ) : (
