@@ -53,7 +53,7 @@ export default function ChatHeader({ onNewChat, statsUpdateTrigger, isLoading, e
         scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         <div className="flex-shrink-0 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
           border-2 border-purple-400 rounded-full">
-          <span className="text-xs sm:text-sm text-purple-600 font-medium mr-1 sm:mr-2">Global</span>
+          <span className="text-base sm:text-lg mr-1 sm:mr-2">🌎</span>
           <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-purple-600 
             to-pink-600 bg-clip-text text-transparent">
             {stats.totalListings}
@@ -63,7 +63,7 @@ export default function ChatHeader({ onNewChat, statsUpdateTrigger, isLoading, e
         <div className="flex-shrink-0 flex items-center gap-2">
           <div className="flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
             border-2 border-blue-400 rounded-full">
-            <span className="text-xs sm:text-sm text-blue-600 font-medium mr-1 sm:mr-2">My Listings</span>
+            <span className="text-base sm:text-lg mr-1 sm:mr-2">🎒</span>
             <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-500 
               to-cyan-500 bg-clip-text text-transparent">
               {stats.userListings}
@@ -71,11 +71,11 @@ export default function ChatHeader({ onNewChat, statsUpdateTrigger, isLoading, e
           </div>
           <div className="flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
             border-2 border-emerald-400 rounded-full">
+            <span className="text-base sm:text-lg mr-1 sm:mr-2">🪙</span>
             <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-500 
               to-green-500 bg-clip-text text-transparent">
               {Number(stats.tokens).toLocaleString()}
             </span>
-            <span className="text-xs sm:text-sm text-emerald-600 font-medium ml-1">tokens</span>
           </div>
         </div>
       </div>

@@ -6,10 +6,19 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
     return user.balance?.$numberInt || user.balance || 0;
   };
 
+  const handleLogout = (e) => {
+    e.preventDefault();
+    if (window.confirm('Are you sure you want to logout?')) {
+      onLogout();
+    }
+  };
+
   return (
     <header className="bg-white/70 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <a href="/" 
+           onClick={(e) => { e.preventDefault(); window.location.reload(); }}
+           className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
           <h1 className="text-lg sm:text-2xl font-bold">
             <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent font-black">
               gpt
@@ -25,23 +34,21 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
             <span className="text-sm sm:text-base">∞</span> 
             <span>infinite AI economy</span>
           </p>
-        </div>
+        </a>
 
         {user ? (
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <div className="flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-28 h-8 rounded-full bg-gradient-to-r from-purple-600 to-emerald-500 flex items-center justify-center text-white text-sm font-bold">
-                {user.username.toUpperCase()}
-              </div>
+          <button
+            onClick={handleLogout}
+            className="group flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 
+              rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300 
+              hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <div className="w-28 h-8 rounded-full bg-gradient-to-r from-purple-600 to-emerald-500 
+              flex items-center justify-center text-white text-sm font-bold group-hover:from-red-500 
+              group-hover:to-pink-500 transition-all duration-300">
+              {user.username.toUpperCase()}
             </div>
-            <button
-              onClick={onLogout}
-              aria-label="Logout"
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors text-sm sm:text-base"
-            >
-              Logout
-            </button>
-          </div>
+          </button>
         ) : (
           <button
             onClick={onLogin}
