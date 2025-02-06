@@ -30,7 +30,7 @@ export function transformMessages(messages) {
         } else {
           actionMessage = `Found ${result.count} listing(s):\n\n${
             result.listings.map(l => 
-              `• ${l.title} Price: ${l.price} coins Owner: ${l.owner}`
+              `• ${l.title} (${l.price} tokens) Owner: ${l.currentOwnerUsername || 'Unknown'} Creator: ${l.creatorUsername || 'Unknown'}`
             ).join('\n')
           }`;
         }

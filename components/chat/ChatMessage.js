@@ -16,11 +16,21 @@ export default function ChatMessage({
          if (searchTerm) {
            matches = matches && listing.title.toLowerCase().includes(searchTerm.toLowerCase());
          }
-         if (ownerFilter === 'my' || creationFilter === 'my') {
-           const userName = message.user?.username?.toLowerCase();
-           const ownerMatch = ownerFilter === 'my' ? listing.owner?.toLowerCase() === userName : false;
-           const creatorMatch = creationFilter === 'my' ? listing.creator?.toLowerCase() === userName : false;
-           matches = matches && (ownerMatch || creatorMatch);
+         if (ownerFilter === 'my' && message.user?.username) {
+           console.log('Filtering by owner:', {
+             listingOwner: listing.currentOwnerUsername,
+             user: message.user.username,
+             matches: listing.currentOwnerUsername?.toLowerCase() === message.user.username.toLowerCase()
+           });
+           matches = matches && listing.currentOwnerUsername?.toLowerCase() === message.user.username.toLowerCase();
+         }
+         if (creationFilter === 'my' && message.user?.username) {
+           console.log('Filtering by creator:', {
+             listingCreator: listing.creatorUsername,
+             user: message.user.username,
+             matches: listing.creatorUsername?.toLowerCase() === message.user.username.toLowerCase()
+           });
+           matches = matches && listing.creatorUsername?.toLowerCase() === message.user.username.toLowerCase();
          }
          return matches;
        })
@@ -29,18 +39,24 @@ export default function ChatMessage({
   console.log('Message props:', { 
     isWelcome: message.isWelcome,
     content: message.content,
-    role: message.role 
+    role: message.role,
+    user: message.user,
+    listings: listings.length,
+    filtered: filteredListings.length
   });
 
   const handleBuyClick = (listing) => {
     // Construct the buy message
     const buyMessage = `buy "${listing.title}" for ${listing.price} tokens`;
     // Find the chat input and populate it
-    const chatInput = document.querySelector('input[type="text"]');
+    const chatInput = document.querySelector('.chat-input');
     if (chatInput) {
+      // Update the input value
       chatInput.value = buyMessage;
-      // Trigger input change event to update React state
-      chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+      // Create and dispatch an input event
+      const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+      Object.defineProperty(inputEvent, 'target', { value: chatInput, enumerable: true });
+      chatInput.dispatchEvent(inputEvent);
       // Focus the input
       chatInput.focus();
     }
@@ -103,7 +119,7 @@ export default function ChatMessage({
               </div>
               <div className="h-1 w-16 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-indigo-600/10 rounded-full" />
 
-              {message.analysis?.action?.status === 'pending' && (
+              {message.analysis?.action?.status === 'pending' && !completedActions.has(message.timestamp) && (
                 <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border border-indigo-100">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 text-white shadow-lg">
@@ -190,11 +206,6 @@ export default function ChatMessage({
             </>
           ) : message.isAction && message.analysis?.action?.status === 'completed' ? (
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2">
-                <div className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-400/10 to-green-500/10 border border-emerald-200 text-emerald-700">
-                  Confirmed
-                </div>
-              </div>
               {message.analysis.action.type === 'updateBalance' ? (
                 <div className="font-medium">
                   Balance updated from{' '}
@@ -210,7 +221,7 @@ export default function ChatMessage({
               ) : message.analysis.action.type === 'fetchListings' ? (
                 <div className="space-y-2">
                   {/* Search Bar */}
-                  <div className="mb-2 flex gap-2">
+                  <div className="mb-2 flex flex-col md:flex-row gap-2">
                     <input
                       type="text"
                       placeholder="Search by title"
@@ -236,50 +247,89 @@ export default function ChatMessage({
                     </select>
                   </div>
                   {filteredListings?.length > 0 ? (
-                    <div className="flex flex-nowrap gap-3 overflow-x-auto">
-                      {filteredListings.map((listing, index) => (
-                        <div key={index} className="group relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-8 rounded-xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
-                          {/* Listing Icon */}
-                          <div className="absolute -left-0 -top-0 w-8 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-lg">
-                            🏷️
-                          </div>
-                          
-                          {/* Main Content */}
-                          <div className="flex-1 ml-4">
-                            <div className="font-semibold text-lg text-gray-900">{listing.title}</div>
-                            <div className="text-sm text-gray-600 mt-1">
-                              {listing.description || 'No description provided'}
+                    <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4">
+                      {filteredListings.map((listing, index) => {
+                        const isOwnedByUser = listing.currentOwnerUsername === message.user?.username;
+                        return (
+                          <div key={index} 
+                               className={`group relative flex-none w-[300px] p-6 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+                                 isOwnedByUser 
+                                   ? 'bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 border-2 border-purple-200 shadow-lg hover:shadow-xl' 
+                                   : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md hover:shadow-lg'
+                               }`}>
+                            {/* Listing Badge */}
+                            <div className={`absolute -right-1 top-3 px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
+                              isOwnedByUser 
+                                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white' 
+                                : 'bg-gradient-to-r from-emerald-500 to-green-500 text-white'
+                            }`}>
+                              {isOwnedByUser ? 'My Listing' : 'Available'}
                             </div>
-                            <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                              <span className="flex items-center gap-1">
-                                👤 <span className="font-medium">{listing.owner}</span>
-                              </span>
-                              <span className="text-gray-300">•</span>
-                              <span className="flex items-center gap-1">
-                                🎨 <span className="font-medium">Created by {listing.creator}</span>
-                              </span>
+                            
+                            {/* Main Content */}
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <h3 className="font-bold text-xl text-gray-900 line-clamp-1">{listing.title}</h3>
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                  {listing.description || 'No description provided'}
+                                </p>
+                              </div>
+
+                              {/* Owner & Creator Info */}
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <span className="flex items-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    <span className="font-medium">{listing.currentOwnerDisplayName || listing.currentOwnerUsername}</span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <span className="flex items-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                    </svg>
+                                    <span>Created by {listing.creatorDisplayName || listing.creatorUsername}</span>
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Price & Action */}
+                              <div className="pt-2">
+                                {!isOwnedByUser ? (
+                                  <button 
+                                    onClick={() => handleBuyClick(listing)}
+                                    className="group/btn relative w-full px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold 
+                                             hover:from-emerald-600 hover:to-green-600 transform transition-all duration-200 active:scale-[0.98]"
+                                  >
+                                    <div className="absolute inset-0 rounded-xl bg-white/20 blur-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200" />
+                                    <div className="relative flex items-center justify-between">
+                                      <span>Buy Now</span>
+                                      <span className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-lg">
+                                        <span className="text-lg font-bold">
+                                          {Number(listing.price).toLocaleString()}
+                                        </span>
+                                        <span className="text-sm opacity-90">tokens</span>
+                                      </span>
+                                    </div>
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-purple-100/50 border border-purple-200">
+                                    <span className="text-purple-700 font-medium">Your Price</span>
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                                        {Number(listing.price).toLocaleString()}
+                                      </span>
+                                      <span className="text-sm text-purple-600">tokens</span>
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          
-                          {/* Price Tag */}
-                          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100">
-                            <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                              {Number(listing.price).toLocaleString()}
-                            </div>
-                            <div className="text-sm font-medium text-emerald-600">tokens</div>
-                          </div>
-                          
-                          {/* Buy Button - Only show if the owner is different from current user */}
-                          {listing.owner !== (message.user?.username) && (
-                            <button 
-                              onClick={() => handleBuyClick(listing)}
-                              className="sm:self-stretch px-6 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium hover:from-emerald-600 hover:to-green-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                            >
-                              Buy Now
-                            </button>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500">No listings found</div>

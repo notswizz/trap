@@ -25,14 +25,32 @@ export default function ChatMessages({
         // Ensure action data is properly structured
         const enhancedMessage = {
           ...message,
+          user: message.user || {
+            username: message.analysis?.actionResult?.user?.username ||
+                     message.analysis?.user?.username ||
+                     message.userContext?.username
+          },
           analysis: message.analysis ? {
             ...message.analysis,
+            user: message.user || message.analysis.user || message.userContext,
             action: message.analysis.action ? {
               ...message.analysis.action,
-              data: message.analysis.action.data || message.analysis.action
+              data: message.analysis.action.data || message.analysis.action,
+              user: message.user || message.analysis.user || message.userContext
+            } : null,
+            actionResult: message.analysis.actionResult ? {
+              ...message.analysis.actionResult,
+              user: message.user || message.analysis.user || message.userContext
             } : null
           } : null
         };
+
+        console.log('Enhanced message:', {
+          user: enhancedMessage.user,
+          analysisUser: enhancedMessage.analysis?.user,
+          actionUser: enhancedMessage.analysis?.action?.user,
+          resultUser: enhancedMessage.analysis?.actionResult?.user
+        });
 
         return (
           <ChatMessage

@@ -249,15 +249,15 @@ export async function handleFetchListings(userId, data) {
     let query = {};
     let listings = [];
 
+    // Get user's info first
+    const user = await db.collection('users').findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { username: 1, displayName: 1 } }
+    );
+    if (!user) throw new Error('User not found');
+
     switch (data.type) {
       case 'my':
-        // Get user's info first
-        const user = await db.collection('users').findOne(
-          { _id: new ObjectId(userId) },
-          { projection: { username: 1 } }
-        );
-        if (!user) throw new Error('User not found');
-        
         listings = await db.collection('listings').find({
           $or: [
             { currentOwnerUsername: user.username },
@@ -292,8 +292,10 @@ export async function handleFetchListings(userId, data) {
       title: listing.title,
       price: listing.price,
       description: listing.description,
-      creator: listing.creatorUsername,
-      owner: listing.currentOwnerUsername,
+      creatorUsername: listing.creatorUsername,
+      creatorDisplayName: listing.creatorDisplayName,
+      currentOwnerUsername: listing.currentOwnerUsername,
+      currentOwnerDisplayName: listing.currentOwnerDisplayName,
       status: listing.status,
       created: listing.createdAt
     }));
@@ -301,7 +303,11 @@ export async function handleFetchListings(userId, data) {
     return {
       type: data.type,
       count: formattedListings.length,
-      listings: formattedListings
+      listings: formattedListings,
+      user: {
+        username: user.username,
+        displayName: user.displayName
+      }
     };
   } catch (error) {
     console.error('Fetch listings error:', error);

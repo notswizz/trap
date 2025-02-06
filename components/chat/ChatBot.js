@@ -66,6 +66,11 @@ export default function ChatBot({ onMessageSent }) {
   async function handleNewChat() {
     try {
       setIsLoading(true);
+      setInput(''); // Clear input when starting new chat
+      setError(null); // Clear any errors
+      setCompletedActions(new Set()); // Reset completed actions
+      setLastMessageTimestamp(null); // Reset timestamp
+      
       const res = await fetch('/api/conversations', {
         method: 'POST',
         credentials: 'include',
@@ -86,6 +91,11 @@ export default function ChatBot({ onMessageSent }) {
       setIsLoading(false);
     }
   }
+
+  // Clear input on component mount/refresh
+  useEffect(() => {
+    setInput('');
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -122,10 +132,12 @@ export default function ChatBot({ onMessageSent }) {
         role: 'assistant',
         content: data.message,
         timestamp: new Date(),
+        user: data.user,
         analysis: {
           action: data.action,
           actionExecuted: !!data.actionResult,
-          actionResult: data.actionResult
+          actionResult: data.actionResult,
+          user: data.user
         }
       });
 
@@ -141,10 +153,12 @@ export default function ChatBot({ onMessageSent }) {
             timestamp: new Date(),
             isAction: true,
             isPending: data.action.status === 'pending',
+            user: data.user,
             analysis: {
               action: data.action,
               actionExecuted: !!data.actionResult,
-              actionResult: data.actionResult
+              actionResult: data.actionResult,
+              user: data.user
             }
           });
         }
@@ -205,35 +219,59 @@ export default function ChatBot({ onMessageSent }) {
 
       const data = await res.json();
       
-      const newMessages = [{
-        role: 'assistant',
-        content: data.message,
-        timestamp: new Date(),
-        analysis: data.action ? {
-          action: data.action,
-          actionExecuted: !!data.actionResult,
-          actionResult: data.actionResult
-        } : null
-      }];
-
-      if (data.actionResult) {
-        const actionMessage = formatActionMessage(data.action, data.actionResult);
-        if (actionMessage) {
-          newMessages.push({
-            role: 'system',
-            content: actionMessage,
-            timestamp: new Date(),
-            isAction: true,
-            analysis: {
-              action: data.action,
-              actionExecuted: true,
-              actionResult: data.actionResult
+      // Update the original message to show it's been handled
+      setMessages(prev => prev.map(msg => 
+        msg.timestamp === messageId
+          ? {
+              ...msg,
+              analysis: {
+                ...msg.analysis,
+                action: {
+                  ...msg.analysis.action,
+                  status: confirmed ? 'completed' : 'cancelled'
+                }
+              }
             }
-          });
-        }
-      }
+          : msg
+      ));
 
-      setMessages(prev => [...prev, ...newMessages]);
+      // Only add the response message if it's not an error
+      if (!data.error) {
+        const newMessages = [{
+          role: 'assistant',
+          content: data.message,
+          timestamp: new Date(),
+          user: data.user,
+          analysis: data.action ? {
+            action: data.action,
+            actionExecuted: !!data.actionResult,
+            actionResult: data.actionResult,
+            user: data.user
+          } : null
+        }];
+
+        if (data.actionResult && confirmed) {
+          const actionMessage = formatActionMessage(data.action, data.actionResult);
+          if (actionMessage) {
+            newMessages.push({
+              role: 'system',
+              content: actionMessage,
+              timestamp: new Date(),
+              isAction: true,
+              isConfirmed: true,
+              user: data.user,
+              analysis: {
+                action: data.action,
+                actionExecuted: true,
+                actionResult: data.actionResult,
+                user: data.user
+              }
+            });
+          }
+        }
+
+        setMessages(prev => [...prev, ...newMessages]);
+      }
 
       if (onMessageSent) {
         await onMessageSent();

@@ -124,7 +124,11 @@ export default withAuth(async function handler(req, res) {
     await saveMessageToConversation(conversation._id, {
       role: 'user',
       content: { text: message.trim() },
-      timestamp: new Date()
+      timestamp: new Date(),
+      user: {
+        username: req.user.username,
+        displayName: req.user.displayName
+      }
     });
 
     // Analyze with minimal context
@@ -168,6 +172,10 @@ export default withAuth(async function handler(req, res) {
     await saveMessageToConversation(conversation._id, {
       role: 'assistant',
       content: { text: analysis.chatResponse },
+      user: {
+        username: req.user.username,
+        displayName: req.user.displayName
+      },
       analysis: analysis.action ? {
         action: analysis.action,
         actionExecuted: !!actionResult,
@@ -179,7 +187,11 @@ export default withAuth(async function handler(req, res) {
     res.status(200).json({
       message: analysis.chatResponse,
       action: analysis.action,
-      actionResult
+      actionResult,
+      user: {
+        username: req.user.username,
+        displayName: req.user.displayName
+      }
     });
   } catch (error) {
     console.error('Chat error:', error);

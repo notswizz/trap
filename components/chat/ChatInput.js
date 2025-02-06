@@ -52,55 +52,53 @@ export default function ChatInput({ input, setInput, handleSubmit, isLoading, is
         </div>
       )}
       
-      <div className="relative">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onInput={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          disabled={isLoading}
-          className="w-full px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200/80 bg-white/90 
-          focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent 
-          placeholder-gray-400 text-gray-700 text-sm shadow-sm
-          disabled:bg-gray-50/90 disabled:cursor-not-allowed transition-all duration-300
-          hover:border-indigo-200 hover:shadow-md"
-        />
-      </div>
-      
-      {input.trim() && (
-        <div className="flex justify-end">
+      <div className="space-y-3">
+        <div className="relative w-full">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onInput={(e) => setInput(e.target.value)}
+            placeholder={isNewConversation ? "Try: 'show listings' or 'add 100 tokens'" : "Type your message..."}
+            className="chat-input w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-gray-200/80 bg-white/90 
+              focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent 
+              placeholder-gray-400 text-gray-700 text-sm shadow-sm
+              disabled:bg-gray-50/90 disabled:cursor-not-allowed transition-all duration-300
+              hover:border-indigo-200 hover:shadow-md"
+            disabled={isLoading}
+          />
+        </div>
+
+        {input.trim() && (
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 
-            bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white 
-            rounded-xl sm:rounded-2xl
-            hover:shadow-lg hover:shadow-indigo-500/30 active:shadow-inner
-            transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none 
-            disabled:hover:transform-none text-sm font-medium
-            border border-indigo-500/20
-            animate-fade-in`}
+            className="w-full px-4 sm:px-6 py-3 sm:py-4
+              bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white 
+              rounded-xl sm:rounded-2xl font-medium text-base
+              hover:shadow-lg hover:shadow-indigo-500/30 active:shadow-inner
+              transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none 
+              disabled:hover:transform-none"
           >
             <div className="flex items-center justify-center gap-2">
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Sending...</span>
                 </>
               ) : (
                 <>
                   <span>Send Message</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
                 </>
               )}
             </div>
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </form>
   );
 } 
