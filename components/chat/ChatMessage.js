@@ -6,6 +6,26 @@ export default function ChatMessage({
   completedActions, 
   isLoading 
 }) {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [ownerFilter, setOwnerFilter] = React.useState('global');
+  const [creationFilter, setCreationFilter] = React.useState('global');
+  const listings = message.analysis?.actionResult?.listings || [];
+  const filteredListings = message.analysis?.action?.type === 'fetchListings'
+    ? listings.filter(listing => {
+         let matches = true;
+         if (searchTerm) {
+           matches = matches && listing.title.toLowerCase().includes(searchTerm.toLowerCase());
+         }
+         if (ownerFilter === 'my' || creationFilter === 'my') {
+           const userName = message.user?.username?.toLowerCase();
+           const ownerMatch = ownerFilter === 'my' ? listing.owner?.toLowerCase() === userName : false;
+           const creatorMatch = creationFilter === 'my' ? listing.creator?.toLowerCase() === userName : false;
+           matches = matches && (ownerMatch || creatorMatch);
+         }
+         return matches;
+       })
+    : [];
+
   console.log('Message props:', { 
     isWelcome: message.isWelcome,
     content: message.content,
@@ -189,9 +209,35 @@ export default function ChatMessage({
                 </div>
               ) : message.analysis.action.type === 'fetchListings' ? (
                 <div className="space-y-2">
-                  {message.analysis.actionResult.listings?.length > 0 ? (
+                  {/* Search Bar */}
+                  <div className="mb-2 flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Search by title"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                    <select
+                      value={ownerFilter}
+                      onChange={(e) => setOwnerFilter(e.target.value)}
+                      className="px-2 py-2 border rounded-md"
+                    >
+                      <option value="global">Global Listings</option>
+                      <option value="my">My Listings</option>
+                    </select>
+                    <select
+                      value={creationFilter}
+                      onChange={(e) => setCreationFilter(e.target.value)}
+                      className="px-2 py-2 border rounded-md"
+                    >
+                      <option value="global">Global Creations</option>
+                      <option value="my">My Creations</option>
+                    </select>
+                  </div>
+                  {filteredListings?.length > 0 ? (
                     <div className="flex flex-nowrap gap-3 overflow-x-auto">
-                      {message.analysis.actionResult.listings.map((listing, index) => (
+                      {filteredListings.map((listing, index) => (
                         <div key={index} className="group relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-8 rounded-xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
                           {/* Listing Icon */}
                           <div className="absolute -left-0 -top-0 w-8 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-lg">
@@ -236,15 +282,7 @@ export default function ChatMessage({
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-8 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
-                      <div className="text-4xl mb-3">🔍</div>
-                      <div className="text-gray-600 font-medium text-center">
-                        No listings found
-                      </div>
-                      <div className="text-sm text-gray-500 text-center mt-1">
-                        Try adjusting your search or create a new listing
-                      </div>
-                    </div>
+                    <div className="text-sm text-gray-500">No listings found</div>
                   )}
                 </div>
               ) : null}
