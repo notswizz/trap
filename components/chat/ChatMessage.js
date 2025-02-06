@@ -340,7 +340,7 @@ export default function ChatMessage({
           ) : null}
         </div>
         
-        {(!message.isAction || !message.isPending) && (
+        {(!message.isAction || !message.isPending) && !message.analysis?.action?.type?.includes('Listing') && (
           <div className={`text-[10px] sm:text-xs mt-1.5 sm:mt-2 flex items-center gap-1.5 ${
             message.role === 'user' 
               ? 'text-indigo-200' 

@@ -371,6 +371,17 @@ class InsufficientBalanceError extends Error {
   }
 }
 
+async function createNotification(db, userId, data) {
+  await db.collection('notifications').insertOne({
+    userId: new ObjectId(userId),
+    type: data.type,
+    message: data.message,
+    data: data.data,
+    read: false,
+    createdAt: new Date()
+  });
+}
+
 export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
   const { db, client } = await connectToDatabase();
   const session = await client.startSession();
@@ -494,6 +505,32 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
       if (!transferResult) {
         throw new Error('Failed to transfer listing ownership');
       }
+
+      // Create notification for seller
+      await createNotification(db, sellerId, {
+        type: 'LISTING_SOLD',
+        message: `Your listing "${listing.title}" was purchased for ${actualPrice} tokens`,
+        data: {
+          listingId: listing._id.toString(),
+          listingTitle: listing.title,
+          price: actualPrice,
+          buyerUsername: buyer.username,
+          newBalance: seller.balance + actualPrice
+        }
+      });
+
+      // Create notification for buyer
+      await createNotification(db, buyerId, {
+        type: 'LISTING_PURCHASED',
+        message: `Successfully purchased "${listing.title}" for ${actualPrice} tokens`,
+        data: {
+          listingId: listing._id.toString(),
+          listingTitle: listing.title,
+          price: actualPrice,
+          sellerUsername: seller.username,
+          newBalance: buyer.balance - actualPrice
+        }
+      });
 
       return { 
         success: true, 
