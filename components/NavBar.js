@@ -1,4 +1,33 @@
+import { useState, useEffect } from 'react';
+import NotificationHistory from './NotificationHistory';
+
 export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread count periodically
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await fetch('/api/notifications/history?limit=1', {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.pagination.unreadCount);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Helper function to safely get balance
   const getBalance = () => {
     if (!user) return 0;
@@ -10,6 +39,26 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
     e.preventDefault();
     if (window.confirm('Are you sure you want to logout?')) {
       onLogout();
+    }
+  };
+
+  const handleNotificationClick = () => {
+    // Find the chat input
+    const chatInput = document.querySelector('.chat-input');
+    if (chatInput) {
+      // Set the input value to request notifications
+      chatInput.value = 'show my notifications';
+      // Create and dispatch an input event
+      const inputEvent = new Event('input', { bubbles: true });
+      chatInput.dispatchEvent(inputEvent);
+      // Create and dispatch a submit event
+      const form = chatInput.closest('form');
+      if (form) {
+        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+        form.dispatchEvent(submitEvent);
+      }
+      // Focus the input
+      chatInput.focus();
     }
   };
 
@@ -37,18 +86,38 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
         </a>
 
         {user ? (
-          <button
-            onClick={handleLogout}
-            className="group flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 
-              rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300 
-              hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <div className="w-28 h-8 rounded-full bg-gradient-to-r from-purple-600 to-emerald-500 
-              flex items-center justify-center text-white text-sm font-bold group-hover:from-red-500 
-              group-hover:to-pink-500 transition-all duration-300">
-              {user.username.toUpperCase()}
-            </div>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Notification Bell */}
+            <button
+              onClick={handleNotificationClick}
+              className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" 
+                />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs 
+                  w-5 h-5 flex items-center justify-center rounded-full">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="group flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 
+                rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300 
+                hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <div className="w-28 h-8 rounded-full bg-gradient-to-r from-purple-600 to-emerald-500 
+                flex items-center justify-center text-white text-sm font-bold group-hover:from-red-500 
+                group-hover:to-pink-500 transition-all duration-300">
+                {user.username.toUpperCase()}
+              </div>
+            </button>
+          </div>
         ) : (
           <button
             onClick={onLogin}
@@ -65,6 +134,12 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
           </button>
         )}
       </div>
+
+      {/* Notification History Modal */}
+      <NotificationHistory 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
     </header>
   );
 } 

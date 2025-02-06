@@ -582,32 +582,79 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
   }
 }
 
+export async function handleFetchNotifications(userId, data = {}) {
+  const { db } = await connectToDatabase();
+  
+  try {
+    console.log('Fetching notifications:', { userId, data });
+    
+    const query = {
+      userId: new ObjectId(userId),
+      $or: [
+        { shownInChat: { $exists: false } },  // Never shown in chat
+        { shownInChat: false }                // Or explicitly marked as not shown
+      ]
+    };
+
+    // If we only want unread notifications
+    if (data.unreadOnly) {
+      query.read = false;
+    }
+
+    console.log('Notification query:', JSON.stringify(query, null, 2));
+
+    // Get notifications with pagination
+    const notifications = await db.collection('notifications')
+      .find(query)
+      .sort({ createdAt: -1 })
+      .limit(data.limit || 20)
+      .toArray();
+
+    console.log('Found notifications:', notifications.length);
+
+    if (notifications.length > 0) {
+      // Mark notifications as read and shown in chat
+      await db.collection('notifications').updateMany(
+        { _id: { $in: notifications.map(n => n._id) } },
+        { 
+          $set: { 
+            read: true,
+            shownInChat: true,
+            shownAt: new Date()
+          } 
+        }
+      );
+    }
+
+    return {
+      success: true,
+      notifications,
+      count: notifications.length,
+      message: notifications.length > 0 
+        ? `Found ${notifications.length} new notification${notifications.length === 1 ? '' : 's'}`
+        : 'No new notifications'
+    };
+  } catch (error) {
+    console.error('Fetch notifications error:', error);
+    throw error;
+  }
+}
+
 export async function executeAction(type, userId, data) {
+  console.log('Executing action:', { type, userId, data });
+  
   try {
     switch (type) {
       case 'updateBalance':
         return await handleUpdateBalance(userId, data);
       case 'createListing':
         return await handleCreateListing(userId, data);
-      case 'transferListing':
-        return await handleListingTransfer(data.listingId, userId, data.toUserId, data.price, data.reason);
+      case 'buyListing':
+        return await handleBuyListing(userId, data.listingId || data.query, data.price);
       case 'fetchListings':
         return await handleFetchListings(userId, data);
-      case 'buyListing':
-        try {
-          return await handleBuyListing(userId, data.listingId, data.price);
-        } catch (error) {
-          if (error.name === 'InsufficientBalanceError') {
-            const errorData = JSON.parse(error.message);
-            return {
-              success: false,
-              error: errorData
-            };
-          }
-          throw error;
-        }
-      case 'None':
-        return null;
+      case 'fetchNotifications':
+        return await handleFetchNotifications(userId, data);
       default:
         throw new Error(`Unknown action type: ${type}`);
     }

@@ -148,23 +148,44 @@ export default withAuth(async function handler(req, res) {
     let actionResult = null;
     if (analysis?.action) {
       if (analysis.action.type !== 'None') {
-        // Set action as pending and ask for confirmation
-        analysis.action = {
-          ...analysis.action,
-          status: 'pending'
-        };
-
-        // Save the pending action
-        const { db } = await connectToDatabase();
-        await db.collection('conversations').updateOne(
-          { _id: new ObjectId(conversationId) },
-          { 
-            $set: { 
-              pendingAction: analysis.action,
-              updatedAt: new Date()
-            }
+        // Check if this is an immediate action (like fetchNotifications or fetchListings)
+        const isImmediateAction = ['fetchNotifications', 'fetchListings'].includes(analysis.action.type);
+        
+        if (isImmediateAction) {
+          // Execute immediate actions right away
+          try {
+            actionResult = await executeAction(
+              analysis.action.type,
+              req.user._id.toString(),
+              analysis.action.data
+            );
+            analysis.action.status = 'completed';
+          } catch (error) {
+            console.error('Immediate action execution error:', error);
+            return res.status(400).json({ 
+              message: error.message,
+              error: true
+            });
           }
-        );
+        } else {
+          // Set non-immediate actions as pending and ask for confirmation
+          analysis.action = {
+            ...analysis.action,
+            status: 'pending'
+          };
+
+          // Save the pending action
+          const { db } = await connectToDatabase();
+          await db.collection('conversations').updateOne(
+            { _id: new ObjectId(conversationId) },
+            { 
+              $set: { 
+                pendingAction: analysis.action,
+                updatedAt: new Date()
+              }
+            }
+          );
+        }
       }
     }
 

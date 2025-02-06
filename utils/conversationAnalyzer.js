@@ -8,6 +8,7 @@ Possible actions:
 - createListing: {title: string, price: number, description: string}
 - fetchListings: {type: "my"|"all"|"user", username?: string}
 - buyListing: {listingId: string, price: number}
+- fetchNotifications: {unreadOnly?: boolean, markAsRead?: boolean, limit?: number}
 - confirmAction: {actionToConfirm: Object} // For confirming pending actions
 - None: null
 
@@ -22,6 +23,7 @@ STRICT Guidelines:
 - For browse/show all -> Use type: "all"
 - For show my listings -> Use type: "my"
 - For show user's listings -> Use type: "user" with username
+- For show/check/view notifications -> Execute fetchNotifications immediately (no confirmation needed)
 
 Example flows:
 User: "add 10 tokens"
@@ -40,6 +42,12 @@ AI: {chatResponse: "Here are all available listings:", action: {type: "fetchList
 User: "browse listings"
 AI: {chatResponse: "Here are all available listings:", action: {type: "fetchListings", data: {type: "all"}}}
 
+User: "show my notifications"
+AI: {chatResponse: "Here are your notifications:", action: {type: "fetchNotifications", data: {markAsRead: true, limit: 20}}}
+
+User: "check unread notifications"
+AI: {chatResponse: "Here are your unread notifications:", action: {type: "fetchNotifications", data: {unreadOnly: true, markAsRead: true}}}
+
 Examples:
 ✅ "add 10 coins" -> updateBalance (needs confirmation)
 ✅ "create listing for moon" -> createListing (needs confirmation)
@@ -55,7 +63,7 @@ Response format:
 {
   "chatResponse": "Your natural conversational response",
   "action": {
-    "type": "updateBalance|createListing|fetchListings|buyListing|confirmAction|None",
+    "type": "updateBalance|createListing|fetchListings|buyListing|fetchNotifications|confirmAction|None",
     "data": {
       // action specific data
     },
@@ -101,6 +109,22 @@ export async function analyzeMessage(message, conversation, user) {
         action: {
           type: "fetchListings",
           data: { type: "all" }
+        }
+      };
+    }
+
+    // Check for notification requests - these should execute immediately
+    const notificationMatch = /^(?:show|check|view|see|get)\s+(?:my\s+)?(?:unread\s+)?notifications?$/i.test(message.trim());
+    if (notificationMatch) {
+      const unreadOnly = /unread/.test(message);
+      return {
+        chatResponse: unreadOnly ? "Here are your unread notifications:" : "Here are your notifications:",
+        action: {
+          type: "fetchNotifications",
+          data: {
+            unreadOnly,
+            markAsRead: true
+          }
         }
       };
     }
