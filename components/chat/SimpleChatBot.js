@@ -8,21 +8,21 @@ const INITIAL_MESSAGE = {
 
 const PRESET_RESPONSES = {
   default: "To access the full features of gptSILK, including AI trading and marketplace access, please log in or create an account. Would you like to know more about what you can do on gptSILK?",
-  features: "gptSILK offers three powerful features:\n\n1. 🏪 AI Marketplace\n• Browse and trade AI models\n• Customize AI behaviors\n• Set your own prices\n\n2. 💰 Smart Wallet\n• Secure transactions\n• Real-time balance tracking\n• Transaction history\n\n3. 🤖 AI Assistant\n• 24/7 trading support\n• Market insights\n• Personalized recommendations\n\nReady to explore? Click the login button to get started!",
-  about: "gptSILK is a revolutionary AI marketplace where you can:\n\n🌟 Trade AI models like never before\n🔄 Create and customize AI behaviors\n💡 Monetize your AI innovations\n🤝 Join a community of AI enthusiasts\n\nThink of it as a decentralized App Store for AI, where anyone can be both a creator and consumer of AI services.",
-  how: "Getting started is easy:\n\n1. 📝 Create your account\n2. 💼 Set up your wallet\n3. 🔍 Browse the marketplace\n4. 💫 Start trading or create listings\n\nWould you like to sign up now?",
-  pricing: "gptSILK uses a flexible pricing model:\n\n💎 Creators set their own prices\n💫 Pay-per-use or subscription options\n🎯 Dynamic pricing based on demand\n✨ Rewards for popular listings\n\nStart exploring the marketplace to see current prices!",
-  security: "Your security is our priority:\n\n🔒 End-to-end encryption\n💼 Secure wallet integration\n✅ Regular security audits\n🛡️ Advanced fraud protection\n\nTrade with confidence on gptSILK!",
+  features: "gptSILK currently offers three core features:\n\n1. 💰 Digital Wallet\n• Secure balance management\n• Real-time transaction tracking\n• Full financial history\n\n2. 🏪 AI Marketplace\n• Create and list AI models\n• Trade with other users\n• Set custom prices\n\n3. 🤖 AI Companion\n• 24/7 trading assistant\n• Market insights\n• Personalized guidance\n\nReady to start trading? Login to begin!",
+  about: "gptSILK is an infinite AI economy powered by a chatbot interface where you can:\n\n🌟 Access an unlimited marketplace of AI models\n💫 Trade digital assets seamlessly\n🤝 Join a growing community of traders\n🔮 Shape the future of AI commerce\n\nThink of it as a new digital economy where AI and human creativity combine to create endless possibilities.",
+  how: "Getting started is quick and easy:\n\n1. 🔑 Click 'Login' in the top right corner\n2. 📝 Enter your username\n3. 💼 Start trading immediately!\n\nReady to join the AI economy?",
+  pricing: "Here's how pricing works on gptSILK:\n\n🎮 The app itself is completely free\n💰 Trading listings requires real money\n💎 Set your own prices as a seller\n✨ Earn from your AI creations\n\nCreate an account to see current market prices!",
+  security: "Your security is our highest priority:\n\n🔒 Enterprise-grade encryption\n🛡️ Advanced AI security systems\n✅ Continuous monitoring\n💼 Secure trading environment\n\nTrade with complete confidence on gptSILK!",
+  contact: "Stay connected with gptSILK:\n\n🐦 Follow us @gptsilk on X\n📧 Get updates by creating an account\n💫 Join our growing community\n\nDon't miss out on the future of AI trading!"
 };
 
 const QUICK_PHRASES = [
   { text: "What is gptSILK?", category: "about", icon: "🌟" },
-  { text: "Show me features", category: "features", icon: "✨" },
+  { text: "Show features", category: "features", icon: "✨" },
   { text: "How to start?", category: "how", icon: "🚀" },
-  { text: "Pricing info", category: "pricing", icon: "💎" },
+  { text: "Does it cost?", category: "pricing", icon: "💎" },
   { text: "Is it secure?", category: "security", icon: "🔒" },
-  { text: "Trading guide", category: "how", icon: "📈" },
-
+  { text: "Keep in touch", category: "contact", icon: "🤝" },
 ];
 
 export default function SimpleChatBot() {
@@ -143,27 +143,36 @@ export default function SimpleChatBot() {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white/80">
             {messages.map((message, index) => (
               <div
                 key={index}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-md ${
+                  className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-lg ${
                     message.role === 'user'
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
-                      : 'bg-gradient-to-br from-white to-purple-50/50 border border-indigo-100/50 text-gray-800'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-br-none'
+                      : 'bg-white border border-indigo-100/50 text-gray-800 rounded-bl-none'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{message.content}</p>
+                  <div className={`text-xs mt-2 flex items-center gap-1.5 ${
+                    message.role === 'user' 
+                      ? 'text-indigo-200'
+                      : 'text-gray-400'
+                  }`}>
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+                    </svg>
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </div>
                 </div>
               </div>
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gradient-to-br from-white to-purple-50/50 border border-indigo-100/50 
-                  rounded-2xl px-4 py-3 shadow-md">
+                <div className="bg-white border border-indigo-100/50 rounded-2xl rounded-bl-none px-5 py-3 shadow-lg">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-purple-600 animate-bounce" />
                     <div className="w-2 h-2 rounded-full bg-pink-600 animate-bounce [animation-delay:0.2s]" />
