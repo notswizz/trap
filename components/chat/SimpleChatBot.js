@@ -75,7 +75,7 @@ export default function SimpleChatBot() {
   };
 
   return (
-    <div className="h-[400px] w-full max-w-3xl mx-auto flex flex-col bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/30 
+    <div className="h-[500px] w-full max-w-3xl mx-auto flex flex-col bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/30 
       rounded-2xl shadow-xl overflow-hidden border border-indigo-200/50 backdrop-blur-sm">
       
       {showTitle ? (
