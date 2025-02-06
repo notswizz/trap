@@ -343,7 +343,9 @@ export default function ChatMessage({
                 action: message.analysis.action,
                 result: message.analysis.actionResult,
                 content: message.content,
-                notifications: message.analysis.actionResult?.notifications || message.content?.actionResult?.notifications
+                notifications: message.notifications || 
+                            message.analysis.actionResult?.notifications || 
+                            message.content?.actionResult?.notifications
               })}
               
               {/* Display the message text */}
@@ -352,9 +354,10 @@ export default function ChatMessage({
               </div>
               <div className="h-1 w-16 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-indigo-600/10 rounded-full" />
               
-              {/* Get notifications from either actionResult or content */}
+              {/* Get notifications from all possible locations */}
               {(() => {
-                const notifications = message.analysis.actionResult?.notifications || 
+                const notifications = message.notifications || 
+                                    message.analysis.actionResult?.notifications || 
                                     message.content?.actionResult?.notifications;
                 
                 console.log('Processing notifications:', notifications);
@@ -367,37 +370,56 @@ export default function ChatMessage({
                         
                         // Helper function to handle MongoDB number format
                         const getNumber = (value) => {
-                          if (value && typeof value === 'object' && '$numberInt' in value) {
+                          if (!value) return 0;
+                          if (typeof value === 'object' && '$numberInt' in value) {
                             return parseInt(value.$numberInt);
                           }
-                          return value;
+                          if (typeof value === 'number') return value;
+                          return 0;
                         };
 
                         // Helper function to handle MongoDB date format
                         const getDate = (value) => {
-                          if (value && typeof value === 'object') {
-                            if ('$date' in value) {
-                              return new Date(value.$date.$numberLong ? parseInt(value.$date.$numberLong) : value.$date);
+                          if (!value) return new Date();
+                          if (typeof value === 'object') {
+                            if ('$date' in value && typeof value.$date === 'object' && '$numberLong' in value.$date) {
+                              return new Date(parseInt(value.$date.$numberLong));
                             }
                           }
                           return new Date(value);
                         };
 
+                        // Helper function to handle MongoDB ObjectId
+                        const getId = (value) => {
+                          if (!value) return '';
+                          if (typeof value === 'object' && '$oid' in value) {
+                            return value.$oid;
+                          }
+                          return value.toString();
+                        };
+
                         // Extract data safely
                         const notificationData = {
-                          ...notification,
+                          id: getId(notification._id),
+                          type: notification.type,
+                          message: notification.message,
                           data: {
-                            ...notification.data,
+                            listingId: getId(notification.data?.listingId),
+                            listingTitle: notification.data?.listingTitle,
                             price: getNumber(notification.data?.price),
+                            sellerUsername: notification.data?.sellerUsername,
                             newBalance: getNumber(notification.data?.newBalance)
                           },
-                          createdAt: getDate(notification.createdAt)
+                          read: !!notification.read,
+                          createdAt: getDate(notification.createdAt),
+                          shownAt: getDate(notification.shownAt),
+                          shownInChat: !!notification.shownInChat
                         };
 
                         console.log('Processed notification data:', notificationData);
 
                         return (
-                          <div key={notification._id?.$oid || index} 
+                          <div key={notificationData.id || index} 
                             className="group relative flex-none w-[300px] p-6 rounded-2xl transition-all duration-300 transform hover:-translate-y-1
                               bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md hover:shadow-lg"
                           >
@@ -432,9 +454,14 @@ export default function ChatMessage({
                                   <p className="text-xs text-gray-500 mt-1">
                                     {notificationData.createdAt.toLocaleString()}
                                   </p>
-                                  {notificationData.data?.price && (
+                                  {notificationData.data?.price > 0 && (
                                     <p className="text-xs font-medium text-emerald-600 mt-1">
                                       {notificationData.data.price} tokens
+                                    </p>
+                                  )}
+                                  {notificationData.data?.newBalance > 0 && (
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      New balance: {notificationData.data.newBalance} tokens
                                     </p>
                                   )}
                                 </div>

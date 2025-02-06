@@ -204,7 +204,7 @@ export default withAuth(async function handler(req, res) {
       role: 'assistant',
       content: { 
         text: analysis.chatResponse,
-        ...(actionResult && { actionResult }) // Include actionResult in content if it exists
+        actionResult: actionResult // Always include actionResult in content
       },
       timestamp: new Date(),
       user: {
@@ -217,9 +217,14 @@ export default withAuth(async function handler(req, res) {
           status: actionResult ? 'completed' : analysis.action.status
         },
         actionExecuted: !!actionResult,
-        actionResult
+        actionResult: actionResult // Include in analysis as well for redundancy
       } : null
     };
+
+    // For notifications, add them directly to the message for easier access
+    if (analysis.action?.type === 'fetchNotifications' && actionResult?.notifications) {
+      aiMessage.notifications = actionResult.notifications;
+    }
 
     console.log('Saving AI message:', JSON.stringify(aiMessage, null, 2));
     await saveMessageToConversation(conversation._id, aiMessage);
@@ -230,6 +235,7 @@ export default withAuth(async function handler(req, res) {
       action: analysis.action,
       actionResult,
       actionExecuted: !!actionResult,
+      notifications: actionResult?.notifications, // Include notifications in response
       user: {
         username: req.user.username,
         displayName: req.user.displayName
