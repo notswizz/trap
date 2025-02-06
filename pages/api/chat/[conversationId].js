@@ -166,10 +166,9 @@ export default withAuth(async function handler(req, res) {
             // For notifications, update the chat response to include count
             if (analysis.action.type === 'fetchNotifications') {
               const notifications = actionResult?.notifications || [];
-              const count = notifications.length;
-              analysis.chatResponse = count > 0 
-                ? `Found ${count} new notification${count === 1 ? '' : 's'}`
-                : 'No new notifications found';
+              analysis.chatResponse = notifications.length > 0 
+                ? `Here are your recent transactions (${notifications.length} total):`
+                : 'No transactions found';
             }
           } catch (error) {
             console.error('Immediate action execution error:', error);
@@ -205,7 +204,7 @@ export default withAuth(async function handler(req, res) {
       role: 'assistant',
       content: { 
         text: analysis.chatResponse,
-        actionResult: actionResult // Always include actionResult in content
+        actionResult: actionResult
       },
       timestamp: new Date(),
       user: {

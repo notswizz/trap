@@ -414,7 +414,9 @@ export default function ChatMessage({
                             listingTitle: notification.data?.listingTitle,
                             price: getNumber(notification.data?.price),
                             sellerUsername: notification.data?.sellerUsername,
-                            newBalance: getNumber(notification.data?.newBalance)
+                            newBalance: getNumber(notification.data?.newBalance),
+                            amount: getNumber(notification.data?.amount),
+                            previousBalance: getNumber(notification.data?.previousBalance)
                           },
                           read: !!notification.read,
                           createdAt: getDate(notification.createdAt),
@@ -432,7 +434,9 @@ export default function ChatMessage({
                             <div className={`absolute -right-1 top-3 px-3 py-1 rounded-full text-xs font-semibold shadow-lg
                               bg-gradient-to-r from-purple-500 to-indigo-500 text-white`}
                             >
-                              New
+                              {notificationData.type === 'LISTING_SOLD' ? 'Sale' :
+                               notificationData.type === 'LISTING_PURCHASED' ? 'Purchase' :
+                               'Balance Update'}
                             </div>
                             
                             <div className="space-y-4">
@@ -460,9 +464,9 @@ export default function ChatMessage({
                                   <p className="text-xs text-gray-500 mt-1">
                                     {notificationData.createdAt.toLocaleString()}
                                   </p>
-                                  {notificationData.data?.price > 0 && (
+                                  {notificationData.data?.amount > 0 && (
                                     <p className="text-xs font-medium text-emerald-600 mt-1">
-                                      {notificationData.data.price} tokens
+                                      {notificationData.data.amount} tokens
                                     </p>
                                   )}
                                   {notificationData.data?.newBalance > 0 && (

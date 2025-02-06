@@ -588,51 +588,59 @@ export async function handleFetchNotifications(userId, data = {}) {
   try {
     console.log('Fetching notifications:', { userId, data });
     
-    const query = {
-      userId: new ObjectId(userId),
-      $or: [
-        { shownInChat: { $exists: false } },  // Never shown in chat
-        { shownInChat: false }                // Or explicitly marked as not shown
-      ]
-    };
+    // Get user's transactions
+    const user = await db.collection('users').findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { transactions: 1 } }
+    );
 
-    // If we only want unread notifications
-    if (data.unreadOnly) {
-      query.read = false;
+    if (!user || !user.transactions) {
+      return {
+        success: true,
+        notifications: [],
+        count: 0,
+        message: 'No transactions found'
+      };
     }
 
-    console.log('Notification query:', JSON.stringify(query, null, 2));
+    // Convert transactions to notifications format
+    const notifications = user.transactions.map(transaction => {
+      const isSale = transaction.reason?.includes('Sale of');
+      const isPurchase = transaction.reason?.includes('Purchase of');
+      let type = 'BALANCE_UPDATE';
+      
+      if (isSale) type = 'LISTING_SOLD';
+      if (isPurchase) type = 'LISTING_PURCHASED';
 
-    // Get notifications with pagination
-    const notifications = await db.collection('notifications')
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(data.limit || 20)
-      .toArray();
+      return {
+        _id: new ObjectId(),
+        type,
+        message: transaction.reason || 'Balance updated',
+        data: {
+          amount: Math.abs(transaction.amount),
+          previousBalance: transaction.previousBalance,
+          newBalance: transaction.newBalance,
+          timestamp: transaction.timestamp
+        },
+        read: false,
+        createdAt: transaction.timestamp || new Date(),
+        shownInChat: false
+      };
+    });
 
-    console.log('Found notifications:', notifications.length);
+    // Sort by most recent first
+    notifications.sort((a, b) => b.createdAt - a.createdAt);
 
-    if (notifications.length > 0) {
-      // Mark notifications as read and shown in chat
-      await db.collection('notifications').updateMany(
-        { _id: { $in: notifications.map(n => n._id) } },
-        { 
-          $set: { 
-            read: true,
-            shownInChat: true,
-            shownAt: new Date()
-          } 
-        }
-      );
-    }
+    // Limit to most recent if specified
+    const limitedNotifications = data.limit ? notifications.slice(0, data.limit) : notifications;
 
     return {
       success: true,
-      notifications,
-      count: notifications.length,
-      message: notifications.length > 0 
-        ? `Found ${notifications.length} new notification${notifications.length === 1 ? '' : 's'}`
-        : 'No new notifications'
+      notifications: limitedNotifications,
+      count: limitedNotifications.length,
+      message: limitedNotifications.length > 0 
+        ? `Found ${limitedNotifications.length} transaction${limitedNotifications.length === 1 ? '' : 's'}`
+        : 'No transactions found'
     };
   } catch (error) {
     console.error('Fetch notifications error:', error);
