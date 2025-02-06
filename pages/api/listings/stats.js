@@ -47,7 +47,9 @@ export default withAuth(async function handler(req, res) {
       res.status(200).json({
         totalListings,
         userListings,
-        responseTime
+        tokens: user.balance || 0,
+        username: user.username,
+        displayName: user.displayName
       });
 
     } catch (dbError) {

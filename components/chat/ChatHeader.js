@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ChatHeader({ onNewChat, onMessageSent }) {
+export default function ChatHeader({ onNewChat, statsUpdateTrigger, isLoading, error: chatError }) {
   const [stats, setStats] = useState({
     totalListings: '...',
     userListings: '...',
-    responseTime: '...'
+    tokens: '...',
+    username: '...'
   });
   const [error, setError] = useState(null);
 
   const fetchStats = async () => {
     try {
-      console.log('Fetching stats...'); // Debug log
       const res = await fetch('/api/listings/stats', {
         credentials: 'include'
       });
@@ -20,13 +20,13 @@ export default function ChatHeader({ onNewChat, onMessageSent }) {
       }
       
       const data = await res.json();
-      console.log('Received stats:', data); // Debug log
       
       setStats(prev => ({
         ...prev,
         totalListings: data.totalListings,
         userListings: data.userListings,
-        responseTime: data.responseTime
+        tokens: data.tokens,
+        username: data.username
       }));
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -34,11 +34,16 @@ export default function ChatHeader({ onNewChat, onMessageSent }) {
     }
   };
 
-  // Fetch stats on mount and when messages are sent
+  // Fetch stats when statsUpdateTrigger changes
   useEffect(() => {
-    console.log('Stats effect triggered', { onMessageSent }); // Debug log
     fetchStats();
-  }, [onMessageSent]);
+  }, [statsUpdateTrigger]);
+
+  // Also fetch stats periodically every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="p-2 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between 
@@ -46,16 +51,6 @@ export default function ChatHeader({ onNewChat, onMessageSent }) {
       {/* Stats container - now scrollable on mobile */}
       <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 
         scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-        <div className="flex-shrink-0 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
-          border-2 border-emerald-400 rounded-full">
-          <span className="text-base sm:text-xl mr-1 sm:mr-2">
-            {error ? '❌' : '⚡️'}
-          </span>
-          <span className="text-xs sm:text-sm text-emerald-600 font-medium">
-            {error ? 'Error loading stats' : 'Active'}
-          </span>
-        </div>
-        
         <div className="flex-shrink-0 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
           border-2 border-purple-400 rounded-full">
           <span className="text-xs sm:text-sm text-purple-600 font-medium mr-1 sm:mr-2">Global</span>
@@ -65,13 +60,23 @@ export default function ChatHeader({ onNewChat, onMessageSent }) {
           </span>
         </div>
         
-        <div className="flex-shrink-0 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
-          border-2 border-blue-400 rounded-full">
-          <span className="text-xs sm:text-sm text-blue-600 font-medium mr-1 sm:mr-2">My Listings</span>
-          <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-500 
-            to-cyan-500 bg-clip-text text-transparent">
-            {stats.userListings}
-          </span>
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <div className="flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
+            border-2 border-blue-400 rounded-full">
+            <span className="text-xs sm:text-sm text-blue-600 font-medium mr-1 sm:mr-2">My Listings</span>
+            <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-500 
+              to-cyan-500 bg-clip-text text-transparent">
+              {stats.userListings}
+            </span>
+          </div>
+          <div className="flex items-center px-2 sm:px-3 py-1 sm:py-1.5 
+            border-2 border-emerald-400 rounded-full">
+            <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-500 
+              to-green-500 bg-clip-text text-transparent">
+              {Number(stats.tokens).toLocaleString()}
+            </span>
+            <span className="text-xs sm:text-sm text-emerald-600 font-medium ml-1">tokens</span>
+          </div>
         </div>
       </div>
 

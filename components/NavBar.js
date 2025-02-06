@@ -29,13 +29,7 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin }) {
 
         {user ? (
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <div className="flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-gray-600">
-              <span className="text-gray-400 text-xs sm:text-sm mr-1 hidden sm:inline">Tokens:</span>
-              <span className="font-medium text-sm sm:text-base">
-                {getBalance().toLocaleString()}
-              </span>
-            </div>
-            <div className="hidden sm:flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-1 px-4 py-1.5 bg-gradient-to-r from-purple-100/80 to-emerald-100/80 rounded-full border border-emerald-200/50 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-28 h-8 rounded-full bg-gradient-to-r from-purple-600 to-emerald-500 flex items-center justify-center text-white text-sm font-bold">
                 {user.username.toUpperCase()}
               </div>

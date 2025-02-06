@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
@@ -13,6 +13,7 @@ export default function ChatBot({ onMessageSent }) {
   const [error, setError] = useState(null);
   const [completedActions, setCompletedActions] = useState(new Set());
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState(null);
+  const [statsUpdateTrigger, setStatsUpdateTrigger] = useState(0);
 
   useEffect(() => {
     handleNewChat();  // Create a new chat immediately on mount
@@ -97,6 +98,14 @@ export default function ChatBot({ onMessageSent }) {
     setInput('');
   }, []);
 
+  // Function to trigger stats update
+  const triggerStatsUpdate = useCallback(async () => {
+    setStatsUpdateTrigger(prev => prev + 1);
+    if (onMessageSent) {
+      await onMessageSent();
+    }
+  }, [onMessageSent]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading || !currentConversationId) return;
@@ -167,9 +176,8 @@ export default function ChatBot({ onMessageSent }) {
       setMessages(prev => [...prev, ...newMessages]);
       setLastMessageTimestamp(new Date().getTime());
 
-      if (onMessageSent) {
-        await onMessageSent();
-      }
+      // Trigger stats update after message
+      await triggerStatsUpdate();
     } catch (err) {
       console.error('Chat error:', err);
       setError(err.message);
@@ -273,9 +281,11 @@ export default function ChatBot({ onMessageSent }) {
         setMessages(prev => [...prev, ...newMessages]);
       }
 
-      if (onMessageSent) {
-        await onMessageSent();
-      }
+      // Trigger stats update after action
+      await triggerStatsUpdate();
+      // Add a small delay and update again to ensure we catch all changes
+      setTimeout(triggerStatsUpdate, 1000);
+
     } catch (err) {
       console.error('Confirmation error:', err);
       setError(err.message);
@@ -300,6 +310,7 @@ export default function ChatBot({ onMessageSent }) {
       <div className="flex flex-col h-full">
         <ChatHeader 
           onNewChat={handleNewChat}
+          statsUpdateTrigger={statsUpdateTrigger}
           isLoading={isLoading}
           error={error}
         />
