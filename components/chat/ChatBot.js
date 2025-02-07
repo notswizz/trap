@@ -305,6 +305,11 @@ export default function ChatBot({ onMessageSent }) {
     }
   };
 
+  // Add handleStatClick function
+  const handleStatClick = (message) => {
+    setInput(message);
+  };
+
   return (
     <div className="h-full flex flex-col bg-white shadow-xl sm:rounded-2xl overflow-hidden">
       <div className="flex flex-col h-full">
@@ -313,6 +318,7 @@ export default function ChatBot({ onMessageSent }) {
           statsUpdateTrigger={statsUpdateTrigger}
           isLoading={isLoading}
           error={error}
+          onStatClick={handleStatClick}
         />
         
         <ChatMessages 

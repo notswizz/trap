@@ -62,6 +62,72 @@ export default function ChatMessage({
     }
   };
 
+  const formatActionMessage = (action) => {
+    if (!action) return null;
+
+    switch (action.type) {
+      case 'fetchListings':
+        const { listings, type, query } = action.data;
+        if (!listings || listings.length === 0) {
+          if (type === 'search') {
+            return `No listings found matching "${query}"`;
+          }
+          return 'No listings found';
+        }
+
+        if (type === 'search') {
+          const listing = listings[0]; // For search we only show one result
+          return (
+            <div className="space-y-4">
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-xl text-gray-900">{listing.title}</h3>
+                    <p className="text-sm text-gray-600">{listing.description}</p>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="font-medium">{listing.currentOwnerDisplayName || listing.currentOwnerUsername}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleBuyClick(listing)}
+                    className="group relative w-full px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold 
+                             hover:from-emerald-600 hover:to-green-600 transform transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <div className="absolute inset-0 rounded-xl bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    <div className="relative flex items-center justify-between">
+                      <span>Buy Now</span>
+                      <span className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-lg">
+                        <span className="text-lg font-bold">
+                          {Number(listing.price).toLocaleString()}
+                        </span>
+                        <span className="text-sm opacity-90">tokens</span>
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // For other listing types, show multiple results
+        return listings.map(listing => (
+          `"${listing.title}" - ${listing.price} tokens\n${listing.description}`
+        )).join('\n\n');
+
+      // ... rest of the existing cases ...
+    }
+  };
+
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
       <div
@@ -95,17 +161,9 @@ export default function ChatMessage({
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 mt-1">
-                <div className="px-4 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 shadow-sm">
-                  <span className="text-gray-500 text-xs sm:text-sm mr-1 hidden sm:inline">Tokens:</span>
-                  <span className="font-semibold text-sm sm:text-base bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent">
-                    {message.content.tokens.toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-500 font-medium flex items-center gap-2">
-                  Ready to trade
-                  <div className="h-2 w-2 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 animate-pulse" />
-                </div>
+              <div className="text-sm text-gray-500 font-medium flex items-center gap-2">
+                Ready to trade
+                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 animate-pulse" />
               </div>
             </div>
           ) : message.role === 'user' ? (

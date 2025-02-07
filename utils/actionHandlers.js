@@ -309,6 +309,12 @@ export async function handleFetchListings(userId, data) {
         }).toArray();
         break;
 
+      case 'search':
+        if (!data.query) throw new Error('Search query required');
+        const bestMatch = await findBestMatchingListing(data.query, db);
+        listings = bestMatch ? [bestMatch] : [];
+        break;
+
       default:
         throw new Error('Invalid listing fetch type');
     }

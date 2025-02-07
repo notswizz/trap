@@ -6,7 +6,7 @@ Output a JSON response that includes chat response and either an action to confi
 Possible actions:
 - updateBalance: {amount: number, reason: string}
 - createListing: {title: string, price: number, description: string}
-- fetchListings: {type: "my"|"all"|"user", username?: string}
+- fetchListings: {type: "my"|"all"|"user"|"search", username?: string, query?: string}
 - buyListing: {listingId: string, price: number}
 - fetchNotifications: {unreadOnly?: boolean, markAsRead?: boolean, limit?: number}
 - confirmAction: {actionToConfirm: Object} // For confirming pending actions
@@ -23,6 +23,7 @@ STRICT Guidelines:
 - For browse/show all -> Use type: "all"
 - For show my listings -> Use type: "my"
 - For show user's listings -> Use type: "user" with username
+- For search/find/look for specific listing -> Use type: "search" with query
 - For show/check/view notifications -> Execute fetchNotifications immediately (no confirmation needed)
 
 Example flows:
@@ -39,8 +40,11 @@ AI: {chatResponse: "Processing your purchase!", action: {type: "confirmAction", 
 User: "show all listings"
 AI: {chatResponse: "Here are all available listings:", action: {type: "fetchListings", data: {type: "all"}}}
 
-User: "browse listings"
-AI: {chatResponse: "Here are all available listings:", action: {type: "fetchListings", data: {type: "all"}}}
+User: "search for AI trading bot"
+AI: {chatResponse: "Let me find that listing for you:", action: {type: "fetchListings", data: {type: "search", query: "AI trading bot"}}}
+
+User: "find listing called neural network"
+AI: {chatResponse: "Searching for 'neural network' listing:", action: {type: "fetchListings", data: {type: "search", query: "neural network"}}}
 
 User: "show my notifications"
 AI: {chatResponse: "Here are your notifications:", action: {type: "fetchNotifications", data: {markAsRead: true, limit: 20}}}
@@ -53,7 +57,8 @@ Examples:
 ✅ "create listing for moon" -> createListing (needs confirmation)
 ✅ "show my listings" -> fetchListings (immediate)
 ✅ "browse all listings" -> fetchListings (immediate)
-✅ "show listings" -> fetchListings (immediate)
+✅ "search for trading bot" -> fetchListings with search (immediate)
+✅ "find neural network" -> fetchListings with search (immediate)
 ✅ "buy listing xyz" -> buyListing (needs confirmation)
 ❌ "thanks" -> None
 ❌ "cool" -> None
@@ -113,6 +118,22 @@ export async function analyzeMessage(message, conversation, user) {
       };
     }
 
+    // Check for search/find listing commands
+    const searchMatch = message.match(/^(?:search|find|look\s+for)\s+(?:listing\s+(?:called|named)\s+)?['""]?([^'""]+)['""]?$/i);
+    if (searchMatch) {
+      const query = searchMatch[1].trim();
+      return {
+        chatResponse: `Searching for '${query}' listing:`,
+        action: {
+          type: "fetchListings",
+          data: { 
+            type: "search",
+            query: query
+          }
+        }
+      };
+    }
+
     // Check for notification requests - these should execute immediately
     const notificationMatch = /^(?:show|check|view|see|get)\s+(?:my\s+)?(?:unread\s+)?notifications?$/i.test(message.trim());
     if (notificationMatch) {
@@ -135,18 +156,31 @@ export async function analyzeMessage(message, conversation, user) {
       const [_, fullMatch, quotedItem, unquotedItem, priceStr] = buyMatch;
       const itemDescription = quotedItem || unquotedItem;
       const price = priceStr ? parseInt(priceStr) : null;
+
+      // If price is specified, treat as a direct purchase request
+      if (price) {
+        return {
+          chatResponse: `Would you like to purchase "${itemDescription}" for ${price} tokens? Please confirm.`,
+          action: {
+            type: "buyListing",
+            data: {
+              query: itemDescription,
+              price: price
+            },
+            status: "pending"
+          }
+        };
+      }
       
+      // Otherwise, search for the item first
       return {
-        chatResponse: price 
-          ? `Would you like to purchase the item matching "${itemDescription}" for ${price} tokens? Please confirm.`
-          : `Would you like to purchase the item matching "${itemDescription}"? Please confirm.`,
+        chatResponse: `Let me find that item for you:`,
         action: {
-          type: "buyListing",
+          type: "fetchListings",
           data: {
-            listingId: itemDescription, // Used as search query
-            price: price
-          },
-          status: "pending"
+            type: "search",
+            query: itemDescription
+          }
         }
       };
     }

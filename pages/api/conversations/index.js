@@ -27,10 +27,9 @@ export default withAuth(async function handler(req, res) {
       // Create new conversation
       const conversation = await createConversation(req.user._id);
 
-      // Add welcome message with badge format for tokens
+      // Add welcome message
       const welcomeMessage = {
-        text: `Welcome to the marketplace`,
-        tokens: req.user.balance || 0
+        text: `Welcome to the marketplace`
       };
 
       // Add welcome message to conversation
