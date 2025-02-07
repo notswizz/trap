@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 
-export default function NotificationHistory({ isOpen, onClose }) {
+export default function NotificationHistory({ isOpen, onClose, onClear }) {
   const [notifications, setNotifications] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -34,17 +34,32 @@ export default function NotificationHistory({ isOpen, onClose }) {
   const clearNotifications = async () => {
     try {
       setClearing(true);
-      const res = await fetch('/api/notifications/clear', {
-        method: 'POST',
-        credentials: 'include'
-      });
+      
+      // Call parent's clear function which handles the API call
+      if (typeof onClear === 'function') {
+        await onClear();
+      }
 
-      if (!res.ok) throw new Error('Failed to clear notifications');
+      // Reset local state
+      setNotifications([]);
+      setPagination(prev => ({
+        ...prev,
+        total: 0,
+        pages: 1,
+        currentPage: 1,
+        unreadCount: 0
+      }));
 
-      // Refresh notifications after clearing
-      await fetchNotifications();
+      // Wait a moment before closing to ensure state updates are processed
+      setTimeout(() => {
+        if (typeof onClose === 'function') {
+          onClose();
+        }
+      }, 500);
     } catch (error) {
       console.error('Error clearing notifications:', error);
+      // Refresh notifications if clearing fails
+      await fetchNotifications();
     } finally {
       setClearing(false);
     }
@@ -55,6 +70,13 @@ export default function NotificationHistory({ isOpen, onClose }) {
       fetchNotifications();
     }
   }, [isOpen]);
+
+  // Add effect to refetch when unread count changes
+  useEffect(() => {
+    if (isOpen && pagination.unreadCount > 0) {
+      fetchNotifications();
+    }
+  }, [isOpen, pagination.unreadCount]);
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -89,7 +111,7 @@ export default function NotificationHistory({ isOpen, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-start sm:items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[99999] flex items-start sm:items-center justify-center p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

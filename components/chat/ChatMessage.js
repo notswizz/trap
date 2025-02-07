@@ -157,7 +157,7 @@ export default function ChatMessage({
                   bg-gradient-to-r from-purple-400 via-emerald-400 to-indigo-400 
                   bg-clip-text text-transparent uppercase gap-0.5 sm:gap-1">
                   <span className="text-sm sm:text-base">∞</span> 
-                  <span>infinite AI economy</span>
+                  <span>infinite economy</span>
                 </div>
               </div>
               

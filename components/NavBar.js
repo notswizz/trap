@@ -1,32 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import NotificationHistory from './NotificationHistory';
 
-export default function NavBar({ isLoggedIn, user, onLogout, onLogin, onShowNotifications }) {
+export default function NavBar({ isLoggedIn, user, onLogout, onLogin, onShowNotifications, unreadCount }) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Fetch unread count periodically
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await fetch('/api/notifications/history?limit=1', {
-          credentials: 'include'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.pagination.unreadCount);
-        }
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
-    };
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
 
   // Helper function to safely get balance
   const getBalance = () => {
@@ -139,7 +115,7 @@ export default function NavBar({ isLoggedIn, user, onLogout, onLogin, onShowNoti
       {/* Notification History Modal */}
       <NotificationHistory 
         isOpen={showNotifications} 
-        onClose={() => setShowNotifications(false)} 
+        onClose={() => setShowNotifications(false)}
       />
     </header>
   );

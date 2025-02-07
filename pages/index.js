@@ -14,6 +14,7 @@ export default function Home() {
   const [isLogin, setIsLogin] = useState(true);
   const [user, setUser] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // Check localStorage for user data on component mount
@@ -71,6 +72,52 @@ export default function Home() {
     };
   }, [toggleModal]);
 
+  // Add function to fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await fetch('/api/notifications/history?limit=1', {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.pagination.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  // Add effect to fetch unread count periodically
+  useEffect(() => {
+    if (!user) return;
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Handle notification clear
+  const handleNotificationsClear = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications/clear', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!res.ok) throw new Error('Failed to clear notifications');
+      
+      setUnreadCount(0);
+      await refreshUserData();
+      return true; // Return success status
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      return false; // Return failure status
+    }
+  }, [refreshUserData]);
+
   const pageTitle = user 
     ? `${user.username} - gptSILK` 
     : "gptSILK - AI Infinite Marketplace";
@@ -111,6 +158,7 @@ export default function Home() {
           onLogout={handleLogout}
           onLogin={toggleModal}
           onShowNotifications={() => setShowNotifications(true)}
+          unreadCount={unreadCount}
         />
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
@@ -138,7 +186,8 @@ export default function Home() {
         {user && (
           <NotificationHistory 
             isOpen={showNotifications} 
-            onClose={() => setShowNotifications(false)} 
+            onClose={() => setShowNotifications(false)}
+            onClear={handleNotificationsClear}
           />
         )}
       </div>

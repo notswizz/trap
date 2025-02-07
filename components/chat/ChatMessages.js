@@ -87,7 +87,7 @@ export default function ChatMessages({
           </div>
         </div>
       )}
-      <div ref={messagesEndRef} />
+      <div ref={messagesEndRef} className="h-0" />
     </div>
   );
 } 

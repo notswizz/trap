@@ -222,7 +222,7 @@ export default function SimpleChatBot() {
                     </div>
                   </div>
                 )}
-                <div ref={messagesEndRef} className="h-4" />
+                <div ref={messagesEndRef} className="h-0" />
               </div>
             </div>
           </div>
