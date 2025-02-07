@@ -139,17 +139,22 @@ export default function Home() {
         <meta property="og:title" content="gptSILK - AI Infinite Marketplace" />
         <meta property="og:description" content="Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://silkgpt.vercel.app" /> {/* Replace with your actual domain */}
-        <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Silk_road_Kazakhstan.svg/1200px-Silk_road_Kazakhstan.svg.png" /> {/* Replace with your actual image URL */}
+        <meta property="og:url" content="https://silkgpt.vercel.app" />
+        <meta property="og:image" content="https://silkgpt.vercel.app/gptsilk.png" />
         <meta property="og:site_name" content="gptSILK" />
 
-
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="gptSILK - AI Infinite Marketplace" />
+        <meta name="twitter:description" content="Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits." />
+        <meta name="twitter:image" content="https://silkgpt.vercel.app/gptsilk.png" />
+        
+        {/* Favicon and Apple Touch Icon */}
+        <link rel="icon" href="/gptsilk.png" />
+        <link rel="apple-touch-icon" href="/gptsilk.png" />
         
         {/* Additional Meta Tags */}
-        <meta name="theme-color" content="#4F46E5" /> {/* Matches your indigo-600 color */}
-        <link rel="icon" href="/favicon.ico" />
-        
-        
+        <meta name="theme-color" content="#4F46E5" />
       </Head>
       <div className="h-[100dvh] flex flex-col overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
         <NavBar 
