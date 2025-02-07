@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function ChatMessage({ 
   message, 
@@ -6,6 +6,11 @@ export default function ChatMessage({
   completedActions, 
   isLoading 
 }) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messageContent = typeof message.content === 'string' 
+    ? message.content 
+    : message.content?.text || '';
   const [searchTerm, setSearchTerm] = React.useState('');
   const [ownerFilter, setOwnerFilter] = React.useState('global');
   const [creationFilter, setCreationFilter] = React.useState('global');
@@ -44,6 +49,30 @@ export default function ChatMessage({
     listings: listings.length,
     filtered: filteredListings.length
   });
+
+  useEffect(() => {
+    if (message.role === 'assistant' && !message.isWelcome) {
+      setIsTyping(true);
+      setDisplayedText('');
+      let currentText = '';
+      let index = 0;
+      
+      const interval = setInterval(() => {
+        if (index < messageContent.length) {
+          currentText += messageContent[index];
+          setDisplayedText(currentText);
+          index++;
+        } else {
+          setIsTyping(false);
+          clearInterval(interval);
+        }
+      }, 30); // Slightly slower for better readability
+
+      return () => clearInterval(interval);
+    } else {
+      setDisplayedText(messageContent);
+    }
+  }, [messageContent, message.role, message.isWelcome]);
 
   const handleBuyClick = (listing) => {
     // Construct the buy message
@@ -212,14 +241,24 @@ export default function ChatMessage({
       <div
         className={`max-w-[90%] sm:max-w-[85%] px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl ${
           message.role === 'user'
-            ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white rounded-br-none shadow-lg shadow-indigo-500/20'
+            ? 'bg-gradient-to-r from-indigo-500/90 to-purple-500/90 text-white rounded-br-none shadow-sm'
             : message.isWelcome
             ? 'bg-gradient-to-br from-white via-purple-50 to-emerald-50 border border-purple-100/50 shadow-lg'
-            : 'bg-gradient-to-br from-white via-purple-50/30 to-emerald-50/30 border border-purple-100/50 shadow-md backdrop-blur-sm'
+            : 'relative bg-white/95 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden'
         }`}
       >
-        <div className={`whitespace-pre-wrap text-sm sm:text-md leading-relaxed ${
-          message.role === 'assistant' ? 'font-medium' : ''
+        {message.role === 'assistant' && !message.isWelcome && (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-white to-emerald-50/50 opacity-40" />
+            <div className="absolute inset-0 border border-purple-200/30 rounded-xl sm:rounded-2xl animate-border-glow" />
+            <div className="absolute -inset-[1px] bg-gradient-to-r from-purple-200/20 via-emerald-200/20 to-indigo-200/20 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          </>
+        )}
+        
+        <div className={`relative whitespace-pre-wrap text-sm sm:text-md leading-relaxed ${
+          message.role === 'user' 
+            ? 'text-white' 
+            : 'text-gray-800'
         }`}>
           {message.isWelcome ? (
             <div className="flex flex-col gap-3">
@@ -246,13 +285,15 @@ export default function ChatMessage({
               </div>
             </div>
           ) : message.role === 'user' ? (
-            <div className="text-white/90">
-              {typeof message.content === 'string' ? message.content : message.content.text}
+            <div>
+              {messageContent}
             </div>
           ) : message.role === 'assistant' ? (
             <>
-              <div className="text-base sm:text-lg font-medium bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-                {typeof message.content === 'string' ? message.content : message.content.text}
+              <div className={`text-base sm:text-lg font-medium ${isTyping ? 'after:content-["▋"] after:ml-0.5 after:animate-blink after:text-purple-600' : ''}`}>
+                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                  {displayedText}
+                </span>
               </div>
               <div className="h-1 w-16 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-indigo-600/10 rounded-full" />
 
