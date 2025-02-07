@@ -79,37 +79,54 @@ export default function ChatMessage({
           const listing = listings[0]; // For search we only show one result
           return (
             <div className="space-y-4">
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-md">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="font-bold text-xl text-gray-900">{listing.title}</h3>
-                    <p className="text-sm text-gray-600">{listing.description}</p>
-                  </div>
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <span className="flex items-center gap-1.5">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white via-purple-50/30 to-emerald-50/30 
+                border border-purple-100/50 shadow-lg hover:shadow-xl transition-all duration-300
+                backdrop-blur-sm group relative overflow-hidden hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-emerald-500/5 to-indigo-500/5 
+                  opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
+                <div className="space-y-4 relative">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <h3 className="font-bold text-xl text-gray-900 bg-gradient-to-r from-purple-600 to-indigo-600 
+                        bg-clip-text text-transparent group-hover:from-indigo-600 group-hover:to-purple-600 
+                        transition-all duration-300 flex-1">{listing.title}</h3>
+                      <div className="flex-shrink-0 flex items-center gap-1.5 bg-gradient-to-br from-emerald-50 to-green-50 
+                        px-3 py-1.5 rounded-lg border border-emerald-200/50 shadow-sm group-hover:shadow-md 
+                        transition-all duration-300 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-green-500/10 
+                          opacity-0 group-hover:opacity-100 transition-all duration-300"/>
+                        <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        <span className="font-medium">{listing.currentOwnerDisplayName || listing.currentOwnerUsername}</span>
-                      </span>
+                        <span className="font-medium text-sm bg-gradient-to-r from-emerald-600 to-green-600 
+                          bg-clip-text text-transparent relative z-10">{listing.currentOwnerDisplayName || listing.currentOwnerUsername}</span>
+                      </div>
                     </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">{listing.description}</p>
                   </div>
 
                   <button 
                     onClick={() => handleBuyClick(listing)}
-                    className="group relative w-full px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold 
-                             hover:from-emerald-600 hover:to-green-600 transform transition-all duration-200 active:scale-[0.98]"
+                    className="group/btn relative w-full px-6 py-4 rounded-xl overflow-hidden
+                      bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 
+                      hover:from-emerald-600 hover:via-green-600 hover:to-emerald-700
+                      text-white font-semibold shadow-lg shadow-emerald-500/20
+                      hover:shadow-xl hover:shadow-emerald-500/30 
+                      transform transition-all duration-300 hover:-translate-y-1 active:translate-y-0"
                   >
-                    <div className="absolute inset-0 rounded-xl bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0deg_180deg,white/10_180deg_360deg)]
+                      group-hover/btn:bg-[conic-gradient(from_180deg,transparent_0deg_180deg,white/20_180deg_360deg)]
+                      animate-[spin_4s_linear_infinite] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
                     <div className="relative flex items-center justify-between">
-                      <span>Buy Now</span>
-                      <span className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-lg">
-                        <span className="text-lg font-bold">
+                      <span className="flex items-center gap-2 text-lg">
+                        <span>Buy Now</span>
+                        <span className="text-2xl">⚡️</span>
+                      </span>
+                      <span className="flex items-center gap-2 pl-3 ml-3 border-l border-white/20">
+                        <span className="text-2xl font-bold">
                           {Number(listing.price).toLocaleString()}
                         </span>
-                        <span className="text-sm opacity-90">tokens</span>
+                        <span className="text-base opacity-90">tokens</span>
                       </span>
                     </div>
                   </button>
@@ -120,9 +137,71 @@ export default function ChatMessage({
         }
 
         // For other listing types, show multiple results
-        return listings.map(listing => (
-          `"${listing.title}" - ${listing.price} tokens\n${listing.description}`
-        )).join('\n\n');
+        return (
+          <div className="grid grid-cols-1 gap-4">
+            {listings.map((listing, index) => (
+              <div key={index} className="p-4 rounded-xl bg-gradient-to-br from-white via-purple-50/30 to-emerald-50/30 
+                border border-purple-100/50 shadow-md hover:shadow-xl transition-all duration-300
+                backdrop-blur-sm group relative overflow-hidden hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-emerald-500/5 to-indigo-500/5 
+                  opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
+                <div className="relative space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="font-bold text-base text-gray-900 bg-gradient-to-r from-purple-600 to-indigo-600 
+                      bg-clip-text text-transparent group-hover:from-indigo-600 group-hover:to-purple-600 
+                      transition-all duration-300 truncate flex-1">{listing.title}</h3>
+                    <div className="flex-shrink-0 flex items-center gap-1.5 bg-gradient-to-br from-emerald-50 to-green-50 
+                      px-2.5 py-1 rounded-lg border border-emerald-200/50 shadow-sm group-hover:shadow-md 
+                      transition-all duration-300 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-green-500/10 
+                        opacity-0 group-hover:opacity-100 transition-all duration-300"/>
+                      <span className="text-base font-bold bg-gradient-to-r from-emerald-500 to-green-500 
+                        bg-clip-text text-transparent relative z-10">
+                        {Number(listing.price).toLocaleString()}
+                      </span>
+                      <span className="text-xs text-emerald-600/70 font-medium relative z-10">tokens</span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 line-clamp-2">{listing.description}</p>
+                  
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded-lg
+                      shadow-sm border border-gray-100">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span>{listing.currentOwnerDisplayName || listing.currentOwnerUsername}</span>
+                    </span>
+                    
+                    <button 
+                      onClick={() => handleBuyClick(listing)}
+                      className="relative group/btn inline-flex items-center gap-2 px-4 py-2 rounded-xl
+                        bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 
+                        hover:from-emerald-600 hover:via-green-600 hover:to-emerald-700
+                        text-white font-medium shadow-lg shadow-emerald-500/20
+                        hover:shadow-xl hover:shadow-emerald-500/30 
+                        transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0
+                        overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0deg_180deg,white/10_180deg_360deg)]
+                        group-hover/btn:bg-[conic-gradient(from_180deg,transparent_0deg_180deg,white/20_180deg_360deg)]
+                        animate-[spin_4s_linear_infinite] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"/>
+                      <span className="relative z-10 flex items-center gap-1">
+                        <span>Buy</span>
+                        <span className="text-lg">⚡️</span>
+                      </span>
+                      <span className="relative z-10 flex items-center gap-1 pl-1 ml-1 border-l border-white/20">
+                        <span className="text-sm font-bold">{Number(listing.price).toLocaleString()}</span>
+                        <span className="text-xs opacity-90">tk</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
 
       // ... rest of the existing cases ...
     }
