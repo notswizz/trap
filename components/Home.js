@@ -47,13 +47,20 @@ export default function HomeContent() {
         
         <SimpleChatBot />
 
-        <h2 className="relative mt-2 sm:mt-4 max-w-3xl mx-auto text-sm sm:text-lg md:text-xl font-medium px-4 sm:px-0 
-          bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl py-3 sm:py-4 shadow-lg 
-          flex items-center justify-center whitespace-nowrap overflow-hidden">
-          <span className="bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 bg-clip-text text-transparent animate-pulse inline-block">
+        <h2 className="relative mt-2 sm:mt-4 max-w-3xl mx-auto text-sm sm:text-lg md:text-xl font-medium 
+          bg-gradient-to-br from-white/80 via-purple-50/80 to-indigo-50/80 backdrop-blur-xl 
+          rounded-2xl py-3 sm:py-4 shadow-lg shadow-purple-500/10
+          border border-purple-200/30
+          flex items-center justify-center whitespace-nowrap overflow-hidden
+          group hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-500">
+          <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 bg-clip-text text-transparent 
+            group-hover:from-indigo-600 group-hover:via-purple-600 group-hover:to-pink-600
+            transition-all duration-500 [text-shadow:0_2px_10px_rgba(147,51,234,0.2)]">
             {'<'}
           </span>
-          <span className="bg-gradient-to-r from-green-500 to-emerald-400 bg-clip-text text-transparent inline-block mx-2 font-mono">
+          <span className="bg-gradient-to-r from-purple-600 via-emerald-500 to-indigo-600 bg-clip-text text-transparent 
+            inline-block mx-2 font-mono relative group-hover:from-indigo-600 group-hover:via-purple-600 group-hover:to-emerald-600
+            transition-all duration-500">
             {listings.length > 0 && (
               <Typewriter
                 options={{
@@ -63,12 +70,16 @@ export default function HomeContent() {
                   delay: 50,
                   deleteSpeed: 20,
                   pauseFor: 2000,
-                  cursor: '|',
+                  cursor: '▌',
+                  cursorClassName: 'text-purple-500/50 animate-pulse',
+                  wrapperClassName: 'font-medium tracking-tight',
                 }}
               />
             )}
           </span>
-          <span className="bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 bg-clip-text text-transparent animate-pulse inline-block">
+          <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 bg-clip-text text-transparent
+            group-hover:from-indigo-600 group-hover:via-purple-600 group-hover:to-pink-600
+            transition-all duration-500 [text-shadow:0_2px_10px_rgba(147,51,234,0.2)]">
             {'/>'} 
           </span>
         </h2>
