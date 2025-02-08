@@ -14,13 +14,13 @@ export default function Home() {
   };
 
   return (
-    <main className="h-screen flex flex-col bg-gradient-to-br from-white via-purple-50/10 to-indigo-50/10 overflow-hidden">
+    <main className="fixed inset-0 flex flex-col bg-gradient-to-br from-white via-purple-50/10 to-indigo-50/10">
       <NavBar 
         onShowNotifications={() => setUnreadCount(0)}
         unreadCount={unreadCount}
       />
       
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 min-h-0">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 min-h-0 overflow-hidden">
         <div className="h-full max-w-7xl mx-auto">
           {user ? (
             <ChatBot onMessageSent={handleMessageSent} />

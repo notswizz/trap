@@ -312,7 +312,7 @@ export default function ChatBot({ onMessageSent }) {
 
   return (
     <div className="h-full flex flex-col bg-white shadow-xl sm:rounded-2xl overflow-hidden">
-      <div className="flex flex-col h-full min-h-0">
+      <div className="flex flex-col h-full">
         <ChatHeader 
           onNewChat={handleNewChat}
           statsUpdateTrigger={statsUpdateTrigger}
@@ -321,7 +321,7 @@ export default function ChatBot({ onMessageSent }) {
           onStatClick={handleStatClick}
         />
         
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 overflow-hidden">
           <ChatMessages 
             messages={messages}
             onActionConfirmation={handleActionConfirmation}
@@ -331,13 +331,15 @@ export default function ChatBot({ onMessageSent }) {
           />
         </div>
         
-        <ChatInput 
-          input={input}
-          setInput={setInput}
-          handleSubmit={handleSubmit}
-          isLoading={isLoading}
-          isNewConversation={messages.length <= 1}
-        />
+        <div className="flex-shrink-0">
+          <ChatInput 
+            input={input}
+            setInput={setInput}
+            handleSubmit={handleSubmit}
+            isLoading={isLoading}
+            isNewConversation={messages.length <= 1}
+          />
+        </div>
       </div>
     </div>
   );
