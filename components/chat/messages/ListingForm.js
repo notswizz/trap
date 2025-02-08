@@ -42,62 +42,6 @@ export default function ListingForm({
     handleActionConfirmation(true, action, message.timestamp);
   };
 
-  if (message.analysis?.action?.status === 'completed' && message.analysis?.actionResult?.listing) {
-    return (
-      <div className="space-y-4">
-        <div className="text-base font-medium text-gray-900">
-          ✨ Listing Created Successfully
-        </div>
-        <div className="relative w-full aspect-[3/2] rounded-lg overflow-hidden">
-          <img 
-            src={message.analysis.actionResult.listing.imageUrl} 
-            alt={message.analysis.actionResult.listing.title}
-            className="w-full h-full object-cover shadow-lg"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div className="w-full">
-              <h3 className="text-white font-bold text-lg">
-                {message.analysis.actionResult.listing.title}
-              </h3>
-              <p className="text-white/90 text-sm mt-1">
-                {message.analysis.actionResult.listing.description}
-              </p>
-              <div className="flex items-center justify-between mt-2">
-                <div className="text-white/80 text-sm">Price</div>
-                <div className="text-white font-bold">
-                  {message.analysis.actionResult.listing.price} tokens
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (completedActions.has(message.timestamp)) {
-    return (
-      <div className="flex flex-col items-center py-8">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 
-          flex items-center justify-center shadow-lg mb-4">
-          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 text-center">
-          Creating Your Listing
-        </h3>
-        <p className="mt-1 text-sm text-gray-600 text-center">
-          Generating AI image and publishing...
-        </p>
-        <div className="mt-6 w-full max-w-[300px]">
-          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 animate-progress-indeterminate" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-start gap-3">
       <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full 
