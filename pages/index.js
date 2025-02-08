@@ -14,14 +14,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-gradient-to-br from-white via-purple-50/10 to-indigo-50/10">
+    <main className="h-screen fixed inset-0 flex flex-col bg-gradient-to-br from-white via-purple-50/10 to-indigo-50/10">
       <NavBar 
         onShowNotifications={() => setUnreadCount(0)}
         unreadCount={unreadCount}
       />
       
-      <div className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="h-[calc(100vh-8rem)] sm:h-[calc(100vh-10rem)] max-w-7xl mx-auto">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden">
+        <div className="h-full max-w-7xl mx-auto">
           {user ? (
             <ChatBot onMessageSent={handleMessageSent} />
           ) : (

@@ -312,7 +312,7 @@ export default function ChatBot({ onMessageSent }) {
 
   return (
     <div className="h-full flex flex-col bg-white shadow-xl sm:rounded-2xl overflow-hidden">
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full overflow-hidden">
         <ChatHeader 
           onNewChat={handleNewChat}
           statsUpdateTrigger={statsUpdateTrigger}
@@ -321,13 +321,15 @@ export default function ChatBot({ onMessageSent }) {
           onStatClick={handleStatClick}
         />
         
-        <ChatMessages 
-          messages={messages}
-          onActionConfirmation={handleActionConfirmation}
-          completedActions={completedActions}
-          lastMessageTimestamp={lastMessageTimestamp}
-          isLoading={isLoading}
-        />
+        <div className="flex-1 overflow-hidden">
+          <ChatMessages 
+            messages={messages}
+            onActionConfirmation={handleActionConfirmation}
+            completedActions={completedActions}
+            lastMessageTimestamp={lastMessageTimestamp}
+            isLoading={isLoading}
+          />
+        </div>
         
         <ChatInput 
           input={input}
