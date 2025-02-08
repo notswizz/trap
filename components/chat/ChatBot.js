@@ -321,25 +321,21 @@ export default function ChatBot({ onMessageSent }) {
           onStatClick={handleStatClick}
         />
         
-        <div className="flex-1 overflow-y-auto">
-          <ChatMessages 
-            messages={messages}
-            onActionConfirmation={handleActionConfirmation}
-            completedActions={completedActions}
-            lastMessageTimestamp={lastMessageTimestamp}
-            isLoading={isLoading}
-          />
-        </div>
+        <ChatMessages 
+          messages={messages}
+          onActionConfirmation={handleActionConfirmation}
+          completedActions={completedActions}
+          lastMessageTimestamp={lastMessageTimestamp}
+          isLoading={isLoading}
+        />
         
-        <div className="flex-shrink-0">
-          <ChatInput 
-            input={input}
-            setInput={setInput}
-            handleSubmit={handleSubmit}
-            isLoading={isLoading}
-            isNewConversation={messages.length <= 1}
-          />
-        </div>
+        <ChatInput 
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          isLoading={isLoading}
+          isNewConversation={messages.length <= 1}
+        />
       </div>
     </div>
   );
