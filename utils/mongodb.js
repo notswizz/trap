@@ -21,30 +21,64 @@ export async function connectToDatabase() {
     return { client: cachedClient, db: cachedDb };
   }
 
-  const client = await MongoClient.connect(MONGODB_URI);
+  const client = await MongoClient.connect(MONGODB_URI, {
+    maxPoolSize: 10,
+    minPoolSize: 5,
+    maxIdleTimeMS: 60000,
+    waitQueueTimeoutMS: 10000,
+    connectTimeoutMS: 30000,
+    retryWrites: true,
+    retryReads: true
+  });
+
   const db = client.db(MONGODB_DB);
 
-  // Ensure indexes exist
-  await Promise.all([
-    // Existing indexes
-    db.collection('users').createIndex({ username: 1 }, { unique: true }),
-    db.collection('users').createIndex({ email: 1 }, { unique: true }),
-    db.collection('listings').createIndex({ status: 1 }),
-    db.collection('listings').createIndex({ currentOwnerUsername: 1 }),
-    db.collection('listings').createIndex({ creatorUsername: 1 }),
-    db.collection('notifications').createIndex({ userId: 1 }),
-    db.collection('conversations').createIndex({ userId: 1 }),
-    
-    // New index for images
-    db.collection('images').createIndex({ shortUrl: 1 }, { unique: true }),
-    db.collection('images').createIndex({ userId: 1 }),
-    db.collection('images').createIndex({ createdAt: 1 })
-  ]).catch(console.error);
+  // Add connection event listeners
+  client.on('connectionPoolCreated', (event) => {
+    console.log('Connection pool created');
+  });
+
+  client.on('connectionPoolClosed', (event) => {
+    console.log('Connection pool closed');
+    cachedClient = null;
+    cachedDb = null;
+  });
+
+  // Ensure indexes exist - with error handling
+  try {
+    await Promise.all([
+      // Existing indexes
+      db.collection('users').createIndex({ username: 1 }, { unique: true }),
+      db.collection('users').createIndex({ email: 1 }, { unique: true }),
+      db.collection('listings').createIndex({ status: 1 }),
+      db.collection('listings').createIndex({ currentOwnerUsername: 1 }),
+      db.collection('listings').createIndex({ creatorUsername: 1 }),
+      db.collection('notifications').createIndex({ userId: 1 }),
+      db.collection('conversations').createIndex({ userId: 1 }),
+      
+      // New index for images
+      db.collection('images').createIndex({ shortUrl: 1 }, { unique: true }),
+      db.collection('images').createIndex({ userId: 1 }),
+      db.collection('images').createIndex({ createdAt: 1 })
+    ]);
+  } catch (error) {
+    console.error('Error creating indexes:', error);
+    // Don't throw - indexes might already exist
+  }
 
   cachedClient = client;
   cachedDb = db;
 
   return { client, db };
+}
+
+// Add a cleanup function
+export async function closeDatabaseConnection() {
+  if (cachedClient) {
+    await cachedClient.close();
+    cachedClient = null;
+    cachedDb = null;
+  }
 }
 
 // Auth utilities

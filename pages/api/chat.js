@@ -1,5 +1,5 @@
 import { withAuth } from '../../utils/authMiddleware';
-import { saveMessageToConversation, getConversation, connectToDatabase } from '../../utils/mongodb';
+import { saveMessageToConversation, getConversation, connectToDatabase, closeDatabaseConnection } from '../../utils/mongodb';
 import { analyzeMessage } from '../../utils/conversationAnalyzer';
 import { executeAction } from '../../utils/actionHandlers';
 import { ObjectId } from 'mongodb';
@@ -16,25 +16,49 @@ function logError(context, error) {
 }
 
 export default withAuth(async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
+  let client = null;
+  
   try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ message: 'Method not allowed' });
+    }
+
     const { message, confirmationResponse, pendingAction } = req.body;
     const userId = req.user._id;
 
+    // Get database connection
+    const { client: dbClient, db } = await connectToDatabase();
+    client = dbClient;
+
     // Get or create conversation using a single database call with upsert
-    const { db } = await connectToDatabase();
     const conversationResult = await db.collection('conversations').findOneAndUpdate(
       { userId: new ObjectId(userId) },
       {
         $set: { updatedAt: new Date() },
-        $setOnInsert: { userId: new ObjectId(userId), messages: [], createdAt: new Date() }
+        $setOnInsert: { 
+          userId: new ObjectId(userId), 
+          messages: [], 
+          createdAt: new Date(),
+          userContext: {
+            username: req.user.username,
+            displayName: req.user.displayName,
+            balance: req.user.balance,
+            createdAt: req.user.createdAt
+          }
+        }
       },
-      { returnDocument: 'after', upsert: true }
+      { 
+        returnDocument: 'after', 
+        upsert: true,
+        maxTimeMS: 5000 // Set maximum execution time
+      }
     );
-    const conversation = conversationResult.value;  // optimized retrieval/creation replaces previous multiple calls
+
+    if (!conversationResult.value) {
+      throw new Error('Failed to create or retrieve conversation');
+    }
+
+    const conversation = conversationResult.value;
 
     // If this is a confirmation response, handle it
     if (confirmationResponse) {
@@ -182,7 +206,24 @@ export default withAuth(async function handler(req, res) {
       user: req.user
     });
   } catch (error) {
-    logError('Chat', error);
-    res.status(500).json({ message: error.message });
+    logError('Chat API', error);
+    
+    // Send appropriate error response
+    const statusCode = error.name === 'MongoServerError' ? 503 : 500;
+    const message = process.env.NODE_ENV === 'development' 
+      ? error.message 
+      : 'An error occurred processing your request';
+      
+    res.status(statusCode).json({ 
+      error: true,
+      message,
+      code: error.code
+    });
+    
+  } finally {
+    // Only close connection in development to help debug
+    if (process.env.NODE_ENV === 'development' && client) {
+      await closeDatabaseConnection();
+    }
   }
 }); 
