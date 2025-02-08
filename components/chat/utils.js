@@ -1,96 +1,113 @@
-export function transformMessages(messages) {
-  const seenActions = new Set();
+export function transformMessages(messages = []) {
+  try {
+    const seenActions = new Set();
 
-  return messages.flatMap(msg => {
-    const messages = [{
-      role: msg.role,
-      content: msg.content,
-      timestamp: msg.timestamp,
-      isWelcome: msg.isWelcome,
-      isAction: false
-    }];
-
-    if (msg.analysis?.actionExecuted && 
-        msg.analysis.action.type !== 'None' && 
-        !seenActions.has(msg.content)) {
+    return messages.flatMap(msg => {
+      if (!msg) return [];  // Skip null/undefined messages
       
-      seenActions.add(msg.content);
-      let actionMessage = '';
+      const messages = [{
+        role: msg.role || 'user',  // Default to user if role is missing
+        content: msg.content || '',  // Default to empty string if content is missing
+        timestamp: msg.timestamp || new Date(),  // Default to now if timestamp is missing
+        isWelcome: msg.isWelcome || false,
+        isAction: false
+      }];
 
-      if (msg.analysis.action.type === 'updateBalance') {
-        const amount = msg.analysis.action.data.amount;
-        const newBalance = msg.analysis.actionResult?.balance || 0;
-        actionMessage = `Balance updated: ${amount > 0 ? '+' : ''}${amount} tokens\nNew balance: ${newBalance} tokens`;
-      } else if (msg.analysis.action.type === 'createListing') {
-        actionMessage = `Created listing: ${msg.analysis.action.data.title}\nPrice: ${msg.analysis.action.data.price} tokens`;
-      } else if (msg.analysis.action.type === 'fetchListings') {
-        const result = msg.analysis.actionResult;
-        if (result.count === 0) {
-          actionMessage = 'No listings found';
-        } else {
-          actionMessage = `Found ${result.count} listing(s):\n\n${
-            result.listings.map(l => 
-              `• ${l.title} (${l.price} tokens) Owner: ${l.currentOwnerUsername || 'Unknown'} Creator: ${l.creatorUsername || 'Unknown'}`
-            ).join('\n')
-          }`;
+      if (msg.analysis?.actionExecuted && 
+          msg.analysis.action?.type !== 'None' && 
+          !seenActions.has(msg.content)) {
+        
+        try {
+          seenActions.add(msg.content);
+          let actionMessage = '';
+
+          if (msg.analysis.action.type === 'updateBalance') {
+            const amount = msg.analysis.action.data?.amount || 0;
+            const newBalance = msg.analysis.actionResult?.balance || 0;
+            actionMessage = `Balance updated: ${amount > 0 ? '+' : ''}${amount} tokens\nNew balance: ${newBalance} tokens`;
+          } else if (msg.analysis.action.type === 'createListing') {
+            actionMessage = `Created listing: ${msg.analysis.action.data?.title || 'Untitled'}\nPrice: ${msg.analysis.action.data?.price || 0} tokens`;
+          } else if (msg.analysis.action.type === 'fetchListings') {
+            const result = msg.analysis.actionResult;
+            if (!result?.listings?.length) {
+              actionMessage = 'No listings found';
+            } else {
+              actionMessage = `Found ${result.count || 0} listing(s):\n\n${
+                result.listings.map(l => 
+                  `• ${l.title || 'Untitled'} (${l.price || 0} tokens) Owner: ${l.currentOwnerUsername || 'Unknown'} Creator: ${l.creatorUsername || 'Unknown'}`
+                ).join('\n')
+              }`;
+            }
+          }
+
+          if (actionMessage) {
+            messages.push({
+              role: 'system',
+              content: actionMessage,
+              timestamp: msg.timestamp || new Date(),
+              isAction: true
+            });
+          }
+        } catch (error) {
+          console.error('Error processing action message:', error);
+          // Continue without adding the action message
         }
       }
 
-      if (actionMessage) {
-        messages.push({
-          role: 'system',
-          content: actionMessage,
-          timestamp: msg.timestamp,
-          isAction: true
-        });
-      }
-    }
-
-    return messages;
-  });
+      return messages;
+    });
+  } catch (error) {
+    console.error('Error transforming messages:', error);
+    return []; // Return empty array on error
+  }
 }
 
 export function formatActionMessage(action, result) {
-  if (!action) return null;
+  try {
+    if (!action) return null;
 
-  // For pending actions that haven't been executed yet
-  if (action.status === 'pending' && !result) {
-    switch (action.type) {
-      case 'updateBalance':
-        return `Pending Action: Add ${action.data.amount} tokens to balance`;
-      case 'createListing':
-        return `Pending Action: Create listing "${action.data.title}" for ${action.data.price} tokens`;
-      case 'fetchListings':
-        return `Pending Action: Fetch ${action.data.type} listings`;
-      case 'buyListing':
-        return `Pending Action: Purchase ${action.data.listingId} for ${action.data.price} tokens`;
-      default:
-        return null;
+    // For pending actions that haven't been executed yet
+    if (action.status === 'pending' && !result) {
+      switch (action.type) {
+        case 'updateBalance':
+          return `Pending Action: Add ${action.data?.amount || 0} tokens to balance`;
+        case 'createListing':
+          return `Pending Action: Create listing "${action.data?.title || 'Untitled'}" for ${action.data?.price || 0} tokens`;
+        case 'fetchListings':
+          return `Pending Action: Fetch ${action.data?.type || 'all'} listings`;
+        case 'buyListing':
+          return `Pending Action: Purchase ${action.data?.listingId || 'unknown'} for ${action.data?.price || 0} tokens`;
+        default:
+          return null;
+      }
     }
-  }
 
-  // For executed/confirmed actions
-  if (result) {
-    switch (action.type) {
-      case 'updateBalance':
-        return `Confirmed: Balance updated from ${result.balance - (action.data.amount || 0)} to ${result.balance} tokens`;
-      case 'createListing':
-        return `Confirmed: Created listing "${action.data.title}" for ${action.data.price} tokens`;
-      case 'fetchListings':
-        if (!result.listings?.length) return 'No listings found';
-        return `Found ${result.count} listing(s):\n\n${
-          result.listings.map(l => 
-            `• ${l.title} (${l.price} tokens) - ${l.owner}`
-          ).join('\n')
-        }`;
-      case 'buyListing':
-        return `Confirmed: Purchased ${action.data.listingId} for ${action.data.price} tokens`;
-      default:
-        return null;
+    // For executed/confirmed actions
+    if (result) {
+      switch (action.type) {
+        case 'updateBalance':
+          return `Confirmed: Balance updated from ${(result.balance || 0) - (action.data?.amount || 0)} to ${result.balance || 0} tokens`;
+        case 'createListing':
+          return `Confirmed: Created listing "${action.data?.title || 'Untitled'}" for ${action.data?.price || 0} tokens`;
+        case 'fetchListings':
+          if (!result.listings?.length) return 'No listings found';
+          return `Found ${result.count || 0} listing(s):\n\n${
+            result.listings.map(l => 
+              `• ${l.title || 'Untitled'} (${l.price || 0} tokens) - ${l.owner || 'Unknown'}`
+            ).join('\n')
+          }`;
+        case 'buyListing':
+          return `Confirmed: Purchased ${action.data?.listingId || 'unknown'} for ${action.data?.price || 0} tokens`;
+        default:
+          return null;
+      }
     }
-  }
 
-  return null;
+    return null;
+  } catch (error) {
+    console.error('Error formatting action message:', error);
+    return null;
+  }
 }
 
 export function isDuplicateAction(newAction, newResult, messages) {

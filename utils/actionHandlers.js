@@ -390,41 +390,127 @@ export async function handleFetchListings(userId, data) {
 async function findBestMatchingListing(searchQuery, db, session = null) {
   const options = session ? { session } : {};
   
+  console.log('Search query:', {
+    original: searchQuery,
+    type: typeof searchQuery
+  });
+
   // First try exact ID match
   if (ObjectId.isValid(searchQuery)) {
+    console.log('Trying ObjectId match:', searchQuery);
     const exactMatch = await db.collection('listings').findOne({ 
       _id: new ObjectId(searchQuery),
       status: 'active'
     }, options);
-    if (exactMatch) return exactMatch;
+    if (exactMatch) {
+      console.log('Found by ObjectId');
+      return exactMatch;
+    }
   }
 
-  // Then try title/description search
-  const listings = await db.collection('listings').find({
-    status: 'active',
-    $or: [
-      { title: { $regex: searchQuery, $options: 'i' } },
-      { description: { $regex: searchQuery, $options: 'i' } }
-    ]
-  }, options).toArray();
+  // Clean and prepare the search query
+  const safeQuery = typeof searchQuery === 'string' 
+    ? searchQuery.replace(/^["'](.+)["']$/, '$1') // Remove outer quotes first
+                 .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Then escape regex chars
+    : '';
 
-  if (listings.length === 0) {
+  console.log('Cleaned query:', {
+    safeQuery,
+    length: safeQuery.length
+  });
+
+  if (!safeQuery) {
+    console.log('No valid search query');
     return null;
   }
 
-  // Score matches based on similarity
+  // Try exact title match first (case insensitive)
+  console.log('Trying exact title match');
+  const exactTitleMatch = await db.collection('listings').findOne({
+    status: 'active',
+    title: new RegExp(`^${safeQuery}$`, 'i')
+  }, options);
+
+  if (exactTitleMatch) {
+    console.log('Found exact title match');
+    return exactTitleMatch;
+  }
+
+  // Then try partial matches with more flexible criteria
+  console.log('Trying partial matches');
+  const listings = await db.collection('listings').find({
+    status: 'active',
+    $or: [
+      { title: { $regex: safeQuery, $options: 'i' } },
+      { description: { $regex: safeQuery, $options: 'i' } },
+      // Add fuzzy matching by splitting words
+      { title: { $regex: safeQuery.split(/\s+/).map(word => `(?=.*${word})`).join(''), $options: 'i' } }
+    ]
+  }, options).toArray();
+
+  console.log('Found listings:', {
+    count: listings.length,
+    titles: listings.map(l => l.title)
+  });
+
+  if (listings.length === 0) {
+    console.log('No matches found');
+    return null;
+  }
+
+  // Score matches based on exact substring match and word matching
+  const searchLower = safeQuery.toLowerCase();
+  const searchWords = searchLower.split(/\s+/);
+  
   const scores = listings.map(listing => {
-    const titleScore = (listing.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ? 2 : 0;
-    const descScore = (listing.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ? 1 : 0;
-    return {
-      listing,
-      score: titleScore + descScore
-    };
+    const titleLower = (listing.title || '').toLowerCase();
+    const descLower = (listing.description || '').toLowerCase();
+    
+    // Base scoring
+    const titleExactMatch = titleLower === searchLower ? 10 : 0;
+    const titleStartsWith = titleLower.startsWith(searchLower) ? 5 : 0;
+    const titleIncludes = titleLower.includes(searchLower) ? 3 : 0;
+    const descIncludes = descLower.includes(searchLower) ? 1 : 0;
+    
+    // Word matching scoring
+    const titleWordMatches = searchWords.reduce((score, word) => {
+      if (titleLower.includes(word)) score += 2;
+      return score;
+    }, 0);
+    
+    const descWordMatches = searchWords.reduce((score, word) => {
+      if (descLower.includes(word)) score += 1;
+      return score;
+    }, 0);
+    
+    const score = titleExactMatch + titleStartsWith + titleIncludes + descIncludes + titleWordMatches + descWordMatches;
+    
+    console.log('Scoring:', {
+      title: titleLower,
+      searchTerm: searchLower,
+      score,
+      matches: {
+        exact: titleExactMatch > 0,
+        startsWith: titleStartsWith > 0,
+        includes: titleIncludes > 0,
+        description: descIncludes > 0,
+        titleWordMatches,
+        descWordMatches
+      }
+    });
+    
+    return { listing, score };
   });
 
   // Return the best match
   scores.sort((a, b) => b.score - a.score);
-  return scores[0].listing;
+  const bestMatch = scores[0].listing;
+  console.log('Best match:', {
+    title: bestMatch.title,
+    score: scores[0].score
+  });
+  
+  return bestMatch;
 }
 
 class InsufficientBalanceError extends Error {
@@ -460,20 +546,37 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
   
   try {
     return await session.withTransaction(async () => {
+      // Handle query object format
+      const searchQuery = typeof listingIdOrQuery === 'object' 
+        ? listingIdOrQuery.query 
+        : listingIdOrQuery;
+
       // Find best matching listing with session
-      const listing = await findBestMatchingListing(listingIdOrQuery, db, session);
+      const listing = await findBestMatchingListing(searchQuery, db, session);
 
       if (!listing) {
         throw new Error('No matching active listing found. Please check the listing details and try again.');
       }
 
+      // Extract numeric price from MongoDB Extended JSON format
+      const listingPrice = typeof listing.price === 'object' && listing.price.$numberInt 
+        ? parseInt(listing.price.$numberInt) 
+        : (typeof listing.price === 'number' ? listing.price : parseInt(listing.price));
+
+      // Get price from either the passed price or the query object
+      const expectedPrice = typeof listingIdOrQuery === 'object' 
+        ? listingIdOrQuery.price 
+        : price;
+
       // Verify price matches if specified
-      if (price && listing.price !== price) {
-        throw new Error(`Price mismatch. Listing price is ${listing.price} tokens.`);
+      if (expectedPrice && listingPrice !== expectedPrice) {
+        throw new Error(`Price mismatch. Listing price is ${listingPrice} tokens.`);
       }
 
-      const actualPrice = price || listing.price;
-      const sellerId = listing.userId.toString();
+      const actualPrice = expectedPrice || listingPrice;
+      const sellerId = listing.userId instanceof ObjectId 
+        ? listing.userId.toString() 
+        : (listing.userId.$oid || listing.userId);
 
       // Verify buyer isn't seller
       if (sellerId === buyerId) {
@@ -490,8 +593,13 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
         throw new Error('Buyer account not found');
       }
 
-      if ((buyer.balance || 0) < actualPrice) {
-        throw new InsufficientBalanceError(actualPrice, buyer.balance || 0);
+      // Handle balance in Extended JSON format
+      const buyerBalance = typeof buyer.balance === 'object' && buyer.balance.$numberInt
+        ? parseInt(buyer.balance.$numberInt)
+        : (typeof buyer.balance === 'number' ? buyer.balance : parseInt(buyer.balance || '0'));
+
+      if (buyerBalance < actualPrice) {
+        throw new InsufficientBalanceError(actualPrice, buyerBalance);
       }
 
       // Get seller info to verify they still exist
@@ -509,16 +617,10 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
         throw new Error('Listing ownership has changed since your request');
       }
 
-      // Log transaction details for debugging
-      console.log('Buy transaction:', {
-        listingId: listing._id.toString(),
-        buyerId,
-        sellerId,
-        price: actualPrice,
-        buyerBalance: buyer.balance,
-        sellerUsername: seller.username,
-        currentOwner: listing.currentOwnerUsername
-      });
+      // Handle seller balance in Extended JSON format
+      const sellerBalance = typeof seller.balance === 'object' && seller.balance.$numberInt
+        ? parseInt(seller.balance.$numberInt)
+        : (typeof seller.balance === 'number' ? seller.balance : parseInt(seller.balance || '0'));
 
       // 1. Update buyer's balance first (subtract)
       const buyerUpdate = await db.collection('users').updateOne(
@@ -530,8 +632,8 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
               amount: -actualPrice,
               reason: `Purchase of listing: ${listing.title}`,
               timestamp: new Date(),
-              previousBalance: buyer.balance,
-              newBalance: buyer.balance - actualPrice
+              previousBalance: buyerBalance,
+              newBalance: buyerBalance - actualPrice
             }
           }
         },
@@ -552,8 +654,8 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
               amount: actualPrice,
               reason: `Sale of listing: ${listing.title}`,
               timestamp: new Date(),
-              previousBalance: seller.balance,
-              newBalance: seller.balance + actualPrice
+              previousBalance: sellerBalance,
+              newBalance: sellerBalance + actualPrice
             }
           }
         },
@@ -566,7 +668,7 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
 
       // 3. Transfer listing ownership last
       const transferResult = await handleListingTransfer(
-        listing._id.toString(),
+        listing._id instanceof ObjectId ? listing._id.toString() : (listing._id.$oid || listing._id),
         sellerId,
         buyerId,
         actualPrice,
@@ -578,31 +680,31 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
         throw new Error('Failed to transfer listing ownership');
       }
 
-      // Create notification for seller
-      await createNotification(db, sellerId, {
-        type: 'LISTING_SOLD',
-        message: `Your listing "${listing.title}" was purchased for ${actualPrice} tokens`,
-        data: {
-          listingId: listing._id.toString(),
-          listingTitle: listing.title,
-          price: actualPrice,
-          buyerUsername: buyer.username,
-          newBalance: seller.balance + actualPrice
-        }
-      });
-
-      // Create notification for buyer
-      await createNotification(db, buyerId, {
-        type: 'LISTING_PURCHASED',
-        message: `Successfully purchased "${listing.title}" for ${actualPrice} tokens`,
-        data: {
-          listingId: listing._id.toString(),
-          listingTitle: listing.title,
-          price: actualPrice,
-          sellerUsername: seller.username,
-          newBalance: buyer.balance - actualPrice
-        }
-      });
+      // Create notifications
+      await Promise.all([
+        createNotification(db, sellerId, {
+          type: 'LISTING_SOLD',
+          message: `Your listing "${listing.title}" was purchased for ${actualPrice} tokens`,
+          data: {
+            listingId: listing._id instanceof ObjectId ? listing._id.toString() : (listing._id.$oid || listing._id),
+            listingTitle: listing.title,
+            price: actualPrice,
+            buyerUsername: buyer.username,
+            newBalance: sellerBalance + actualPrice
+          }
+        }, session),
+        createNotification(db, buyerId, {
+          type: 'LISTING_PURCHASED',
+          message: `Successfully purchased "${listing.title}" for ${actualPrice} tokens`,
+          data: {
+            listingId: listing._id instanceof ObjectId ? listing._id.toString() : (listing._id.$oid || listing._id),
+            listingTitle: listing.title,
+            price: actualPrice,
+            sellerUsername: seller.username,
+            newBalance: buyerBalance - actualPrice
+          }
+        }, session)
+      ]);
 
       return { 
         success: true, 
@@ -617,11 +719,10 @@ export async function handleBuyListing(buyerId, listingIdOrQuery, price) {
     });
   } catch (error) {
     if (error.name === 'InsufficientBalanceError') {
-      // Pass through the structured error
       throw error;
     }
     console.error('Purchase error:', error);
-    throw new Error('Unable to complete purchase. Please try again.');
+    throw new Error(`Purchase failed: ${error.message}`);
   } finally {
     await session.endSession();
   }

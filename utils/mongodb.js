@@ -18,58 +18,103 @@ let cachedDb = null;
 
 export async function connectToDatabase() {
   if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb };
+    try {
+      await cachedDb.command({ ping: 1 });
+      return { client: cachedClient, db: cachedDb };
+    } catch (error) {
+      cachedClient = null;
+      cachedDb = null;
+    }
   }
 
-  const client = await MongoClient.connect(MONGODB_URI, {
-    maxPoolSize: 10,
-    minPoolSize: 5,
-    maxIdleTimeMS: 60000,
-    waitQueueTimeoutMS: 10000,
-    connectTimeoutMS: 30000,
-    retryWrites: true,
-    retryReads: true
-  });
+  try {
+    // Remove srv modifiers from URI if present
+    const uri = MONGODB_URI.includes('mongodb+srv://')
+      ? MONGODB_URI.replace(/\?.*$/, '') + '?heartbeatFrequencyMS=300000' 
+      : MONGODB_URI;
 
-  const db = client.db(MONGODB_DB);
+    const options = {
+      maxPoolSize: 1,
+      minPoolSize: 1,
+      maxIdleTimeMS: 120000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 360000,
+      serverSelectionTimeoutMS: 30000,
+      
+      // Basic options
+      retryWrites: true,
+      retryReads: true,
+      
+      // TLS options for Atlas
+      tls: true,
+      tlsAllowInvalidCertificates: true,
+      tlsAllowInvalidHostnames: true,
+      
+      // Disable monitoring
+      monitorCommands: false,
+      heartbeatFrequencyMS: 300000
+    };
 
-  // Add connection event listeners
-  client.on('connectionPoolCreated', (event) => {
-    console.log('Connection pool created');
-  });
+    const client = await MongoClient.connect(uri, options);
+    const db = client.db(MONGODB_DB);
 
-  client.on('connectionPoolClosed', (event) => {
-    console.log('Connection pool closed');
+    // Remove all listeners
+    client.removeAllListeners();
+    
+    // Only add critical error handler
+    client.on('error', () => {
+      cachedClient = null;
+      cachedDb = null;
+    });
+
+    await db.command({ ping: 1 });
+
+    // Create indexes silently
+    try {
+      await Promise.all([
+        db.collection('users').createIndex(
+          { username: 1 }, 
+          { unique: true, background: true, collation: { locale: 'en', strength: 2 } }
+        ),
+        db.collection('users').createIndex(
+          { email: 1 }, 
+          { unique: true, background: true, collation: { locale: 'en', strength: 2 } }
+        ),
+        db.collection('listings').createIndex({ status: 1 }),
+        db.collection('listings').createIndex({ currentOwnerUsername: 1 }),
+        db.collection('listings').createIndex({ creatorUsername: 1 }),
+        db.collection('notifications').createIndex({ userId: 1 }),
+        db.collection('conversations').createIndex({ userId: 1 }),
+        db.collection('images').createIndex({ shortUrl: 1 }, { unique: true }),
+        db.collection('images').createIndex({ userId: 1 }),
+        db.collection('images').createIndex({ createdAt: 1 })
+      ]);
+    } catch (error) {
+      if (error.code !== 85) {
+        console.error('Index error:', error.message);
+      }
+    }
+
+    cachedClient = client;
+    cachedDb = db;
+    return { client, db };
+  } catch (error) {
     cachedClient = null;
     cachedDb = null;
-  });
-
-  // Ensure indexes exist - with error handling
-  try {
-    await Promise.all([
-      // Existing indexes
-      db.collection('users').createIndex({ username: 1 }, { unique: true }),
-      db.collection('users').createIndex({ email: 1 }, { unique: true }),
-      db.collection('listings').createIndex({ status: 1 }),
-      db.collection('listings').createIndex({ currentOwnerUsername: 1 }),
-      db.collection('listings').createIndex({ creatorUsername: 1 }),
-      db.collection('notifications').createIndex({ userId: 1 }),
-      db.collection('conversations').createIndex({ userId: 1 }),
-      
-      // New index for images
-      db.collection('images').createIndex({ shortUrl: 1 }, { unique: true }),
-      db.collection('images').createIndex({ userId: 1 }),
-      db.collection('images').createIndex({ createdAt: 1 })
-    ]);
-  } catch (error) {
-    console.error('Error creating indexes:', error);
-    // Don't throw - indexes might already exist
+    throw error;
   }
+}
 
-  cachedClient = client;
-  cachedDb = db;
-
-  return { client, db };
+// Add a function to check connection health
+export async function checkDatabaseConnection() {
+  try {
+    const { db } = await connectToDatabase();
+    await db.command({ ping: 1 });
+    return true;
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    return false;
+  }
 }
 
 // Add a cleanup function
