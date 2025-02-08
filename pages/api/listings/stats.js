@@ -44,12 +44,32 @@ export default withAuth(async function handler(req, res) {
       // Calculate average response time (placeholder for now)
       const responseTime = '< 1s';
 
+      // Add imageUrl and imagePrompt to the returned listing data
+      const formattedListings = await db.collection('listings')
+        .find({ status: 'active' })
+        .toArray()
+        .then(listings => listings.map(listing => ({
+          id: listing._id,
+          title: listing.title,
+          price: listing.price,
+          description: listing.description,
+          imageUrl: listing.imageUrl,
+          imagePrompt: listing.imagePrompt,
+          creatorUsername: listing.creatorUsername,
+          creatorDisplayName: listing.creatorDisplayName,
+          currentOwnerUsername: listing.currentOwnerUsername,
+          currentOwnerDisplayName: listing.currentOwnerDisplayName,
+          status: listing.status,
+          created: listing.createdAt
+        })));
+
       res.status(200).json({
         totalListings,
         userListings,
         tokens: user.balance || 0,
         username: user.username,
-        displayName: user.displayName
+        displayName: user.displayName,
+        formattedListings
       });
 
     } catch (dbError) {

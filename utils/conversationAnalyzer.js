@@ -9,6 +9,7 @@ Possible actions:
 - fetchListings: {type: "my"|"all"|"user"|"search", username?: string, query?: string}
 - buyListing: {listingId: string, price: number}
 - fetchNotifications: {unreadOnly?: boolean, markAsRead?: boolean, limit?: number}
+- generateImage: {prompt: string} // For generating AI images
 - confirmAction: {actionToConfirm: Object} // For confirming pending actions
 - None: null
 
@@ -25,6 +26,8 @@ STRICT Guidelines:
 - For show user's listings -> Use type: "user" with username
 - For search/find/look for specific listing -> Use type: "search" with query
 - For show/check/view notifications -> Execute fetchNotifications immediately (no confirmation needed)
+- For generate/create/make/draw image/picture -> Set generateImage action as pending and ask for confirmation
+- For image generation, extract detailed prompt from user's request
 
 Example flows:
 User: "add 10 tokens"
@@ -51,6 +54,12 @@ AI: {chatResponse: "Here are your notifications:", action: {type: "fetchNotifica
 
 User: "check unread notifications"
 AI: {chatResponse: "Here are your unread notifications:", action: {type: "fetchNotifications", data: {unreadOnly: true, markAsRead: true}}}
+
+User: "generate an image of a sunset"
+AI: {chatResponse: "Would you like me to generate an image of a sunset? Please confirm.", action: {type: "generateImage", data: {prompt: "a beautiful sunset with vibrant colors"}, status: "pending"}}
+
+User: "create an image of a cyberpunk city"
+AI: {chatResponse: "Would you like me to generate an image of a cyberpunk city? Please confirm.", action: {type: "generateImage", data: {prompt: "a detailed cyberpunk cityscape with neon lights and flying vehicles"}, status: "pending"}}
 
 Examples:
 ✅ "add 10 coins" -> updateBalance (needs confirmation)
@@ -84,6 +93,21 @@ export async function analyzeMessage(message, conversation, user) {
     
     // Only handle confirmations through text, cancellations only through button
     if (pendingAction && isConfirmation) {
+      // For image generation, execute directly
+      if (pendingAction.type === 'generateImage') {
+        return {
+          chatResponse: "Generating your image...",
+          action: {
+            type: "generateImage",
+            data: {
+              prompt: pendingAction.data.prompt,
+              conversationId: conversation._id.toString()
+            }
+          }
+        };
+      }
+
+      // For other actions, use confirmAction
       return {
         chatResponse: "Processing your confirmed action...",
         action: {
@@ -185,6 +209,23 @@ export async function analyzeMessage(message, conversation, user) {
       };
     }
 
+    // Check for image generation requests
+    const imageGenMatch = message.match(/^(?:generate|create|make|draw)\s+(?:an?\s+)?(?:image|picture)\s+of\s+(.+)$/i);
+    if (imageGenMatch) {
+      const prompt = imageGenMatch[1].trim();
+      return {
+        chatResponse: `Would you like me to generate an image of ${prompt}? Please confirm.`,
+        action: {
+          type: "generateImage",
+          data: { 
+            prompt,
+            conversationId: conversation._id 
+          },
+          status: "pending"
+        }
+      };
+    }
+
     // Optimize context by only including relevant information
     const recentActions = conversation.messages
       .filter(m => m.analysis?.actionExecuted)
@@ -254,6 +295,41 @@ export async function analyzeMessage(message, conversation, user) {
           action: { type: 'None' }
         };
       }
+    }
+
+    // Add this near where other action types are handled
+    if (analysis?.action?.type === 'generateImage' && analysis?.action?.status === 'completed') {
+      return {
+        chatResponse: "Here's your generated image:",
+        action: {
+          type: 'generateImage',
+          data: analysis.action.data,
+          status: 'completed',
+          result: {
+            content: analysis.action.result.content,
+            isImage: true,
+            prompt: analysis.action.data.prompt
+          }
+        }
+      };
+    }
+
+    if (analysis?.action?.type === 'createListing' && analysis?.action?.status === 'completed') {
+      const listing = analysis.actionResult.listing;
+      return {
+        chatResponse: `✨ Successfully created listing "${listing.title}" for ${listing.price} tokens`,
+        action: {
+          type: 'createListing',
+          status: 'completed',
+          result: {
+            listing: {
+              ...listing,
+              imageUrl: listing.imageUrl,
+              imagePrompt: listing.imagePrompt
+            }
+          }
+        }
+      };
     }
 
     return analysis || {

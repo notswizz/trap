@@ -2,31 +2,48 @@ import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { ObjectId } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongodb URI to .env.local');
+const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB = process.env.MONGODB_DB;
+
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
 
-const uri = process.env.MONGODB_URI;
-let client;
-let clientPromise;
-
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
+if (!MONGODB_DB) {
+  throw new Error('Please define the MONGODB_DB environment variable inside .env.local');
 }
+
+let cachedClient = null;
+let cachedDb = null;
 
 export async function connectToDatabase() {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB);
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
+  }
+
+  const client = await MongoClient.connect(MONGODB_URI);
+  const db = client.db(MONGODB_DB);
+
+  // Ensure indexes exist
+  await Promise.all([
+    // Existing indexes
+    db.collection('users').createIndex({ username: 1 }, { unique: true }),
+    db.collection('users').createIndex({ email: 1 }, { unique: true }),
+    db.collection('listings').createIndex({ status: 1 }),
+    db.collection('listings').createIndex({ currentOwnerUsername: 1 }),
+    db.collection('listings').createIndex({ creatorUsername: 1 }),
+    db.collection('notifications').createIndex({ userId: 1 }),
+    db.collection('conversations').createIndex({ userId: 1 }),
+    
+    // New index for images
+    db.collection('images').createIndex({ shortUrl: 1 }, { unique: true }),
+    db.collection('images').createIndex({ userId: 1 }),
+    db.collection('images').createIndex({ createdAt: 1 })
+  ]).catch(console.error);
+
+  cachedClient = client;
+  cachedDb = db;
+
   return { client, db };
 }
 

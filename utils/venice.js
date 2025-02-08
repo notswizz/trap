@@ -50,4 +50,42 @@ export async function getChatResponse(messages, includeVenicePrompt = true) {
     console.error('Venice API Error:', error);
     throw new Error('Failed to get response from AI');
   }
+}
+
+export async function generateImage(prompt, options = {}) {
+  const defaultOptions = {
+    model: "fluently-xl",
+    prompt,
+    width: 512,
+    height: 512,
+    steps: 30,
+    hide_watermark: false,
+    return_binary: false,
+    cfg_scale: 7,
+    safe_mode: false
+  };
+
+  const requestOptions = {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.VENICE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...defaultOptions,
+      ...options
+    })
+  };
+
+  try {
+    const response = await fetch('https://api.venice.ai/api/v1/image/generate', requestOptions);
+    if (!response.ok) {
+      throw new Error(`Image generation failed: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.images[0];
+  } catch (error) {
+    console.error('Image generation error:', error);
+    throw error;
+  }
 } 

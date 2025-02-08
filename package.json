@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.744.0",
     "@vercel/analytics": "^1.4.1",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",

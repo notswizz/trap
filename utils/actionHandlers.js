@@ -1,5 +1,7 @@
 import { connectToDatabase } from './mongodb';
 import { ObjectId } from 'mongodb';
+import { generateImage } from './venice';
+import { uploadImageToS3 } from './s3';
 
 export async function handleUpdateBalance(userId, data) {
   const { db } = await connectToDatabase();
@@ -117,6 +119,19 @@ export async function handleCreateListing(userId, data) {
     throw new Error('Creator not found');
   }
 
+  // Generate an image prompt based on title and description
+  const imagePrompt = `${data.title} - ${data.description}`.slice(0, 200); // Limit prompt length
+  console.log('Generating image for listing with prompt:', imagePrompt);
+  
+  // Generate the image
+  const imageData = await generateImage(imagePrompt);
+  
+  // Generate a unique filename
+  const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.png`;
+  
+  // Upload to S3
+  const imageUrl = await uploadImageToS3(imageData, filename);
+
   const listing = {
     userId: new ObjectId(userId),
     title: data.title,
@@ -124,7 +139,10 @@ export async function handleCreateListing(userId, data) {
     description: data.description,
     status: 'active',
     createdAt: new Date(),
-    // Add new fields
+    // Add image fields
+    imageUrl: imageUrl,
+    imagePrompt: imagePrompt,
+    // Existing fields
     creatorUsername: creator.username,
     creatorDisplayName: creator.displayName,
     currentOwnerUsername: creator.username,
@@ -136,7 +154,7 @@ export async function handleCreateListing(userId, data) {
       price: data.price,
       type: 'created'
     }],
-    transactions: [] // Will store future trades/sales
+    transactions: []
   };
 
   await db.collection('listings').insertOne(listing);
@@ -149,11 +167,30 @@ export async function handleCreateListing(userId, data) {
       listingId: listing._id.toString(),
       title: data.title,
       price: data.price,
-      description: data.description
+      description: data.description,
+      imageUrl: imageUrl
     }
   });
 
-  return listing;
+  // Return formatted listing with image
+  return {
+    success: true,
+    message: 'Listing created successfully',
+    listing: {
+      id: listing._id,
+      title: listing.title,
+      price: listing.price,
+      description: listing.description,
+      imageUrl: listing.imageUrl,
+      imagePrompt: listing.imagePrompt,
+      creatorUsername: listing.creatorUsername,
+      creatorDisplayName: listing.creatorDisplayName,
+      currentOwnerUsername: listing.currentOwnerUsername,
+      currentOwnerDisplayName: listing.currentOwnerDisplayName,
+      status: listing.status,
+      created: listing.createdAt
+    }
+  };
 }
 
 export async function handleListingTransfer(listingId, fromUserId, toUserId, price, reason = 'sale', session = null) {
@@ -325,6 +362,8 @@ export async function handleFetchListings(userId, data) {
       title: listing.title,
       price: listing.price,
       description: listing.description,
+      imageUrl: listing.imageUrl,
+      imagePrompt: listing.imagePrompt,
       creatorUsername: listing.creatorUsername,
       creatorDisplayName: listing.creatorDisplayName,
       currentOwnerUsername: listing.currentOwnerUsername,
@@ -665,21 +704,117 @@ export async function handleFetchNotifications(userId, data = {}) {
   }
 }
 
-export async function executeAction(type, userId, data) {
-  console.log('Executing action:', { type, userId, data });
+async function handleGenerateImage(userId, data) {
+  const { db } = await connectToDatabase();
   
+  try {
+    console.log('Generating image with data:', data);
+    const imageData = await generateImage(data.prompt);
+    
+    // Generate a unique filename
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.png`;
+    
+    // Upload to S3
+    const s3Url = await uploadImageToS3(imageData, filename);
+    
+    // Create image document
+    const imageDoc = {
+      userId: new ObjectId(userId),
+      url: s3Url,
+      filename: filename,
+      prompt: data.prompt,
+      createdAt: new Date()
+    };
+
+    // Save image to images collection
+    const imageResult = await db.collection('images').insertOne(imageDoc);
+    console.log('Saved image to database:', imageResult.insertedId);
+    
+    if (!imageResult.insertedId) {
+      throw new Error('Failed to save image to database');
+    }
+
+    // If we have a conversation ID, add a reference to the image
+    if (data.conversationId) {
+      try {
+        const message = {
+          role: 'assistant',
+          content: s3Url,
+          isImage: true,
+          prompt: data.prompt,
+          imageId: imageResult.insertedId,
+          timestamp: new Date(),
+          analysis: {
+            action: {
+              type: 'generateImage',
+              status: 'completed',
+              result: {
+                content: s3Url,
+                isImage: true,
+                prompt: data.prompt
+              }
+            },
+            actionExecuted: true,
+            actionResult: {
+              content: s3Url,
+              isImage: true,
+              prompt: data.prompt
+            }
+          }
+        };
+
+        const conversationResult = await db.collection('conversations').updateOne(
+          { _id: new ObjectId(data.conversationId) },
+          {
+            $push: { messages: message },
+            $set: { 
+              updatedAt: new Date(),
+              pendingAction: null
+            }
+          }
+        );
+
+        console.log('Updated conversation:', {
+          conversationId: data.conversationId,
+          modifiedCount: conversationResult.modifiedCount
+        });
+
+      } catch (convError) {
+        console.error('Failed to update conversation but image was saved:', convError);
+      }
+    }
+
+    return {
+      success: true,
+      imageUrl: s3Url,
+      imageId: imageResult.insertedId,
+      message: "Image generated successfully",
+      content: s3Url,
+      isImage: true,
+      prompt: data.prompt
+    };
+
+  } catch (error) {
+    console.error('Image generation error:', error);
+    throw new Error(`Failed to generate image: ${error.message}`);
+  }
+}
+
+export async function executeAction(type, userId, data) {
   try {
     switch (type) {
       case 'updateBalance':
         return await handleUpdateBalance(userId, data);
       case 'createListing':
         return await handleCreateListing(userId, data);
-      case 'buyListing':
-        return await handleBuyListing(userId, data.listingId || data.query, data.price);
       case 'fetchListings':
         return await handleFetchListings(userId, data);
+      case 'buyListing':
+        return await handleBuyListing(userId, data);
       case 'fetchNotifications':
         return await handleFetchNotifications(userId, data);
+      case 'generateImage':
+        return await handleGenerateImage(userId, data);
       default:
         throw new Error(`Unknown action type: ${type}`);
     }
@@ -687,4 +822,4 @@ export async function executeAction(type, userId, data) {
     console.error('Action execution error:', error);
     throw error;
   }
-} 
+}
