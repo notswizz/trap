@@ -20,7 +20,7 @@ export default function ChatMessages({
   }, [messages, lastMessageTimestamp]);
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gradient-to-br from-gray-50 via-white to-gray-50/80">
+    <div className="h-full flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gradient-to-br from-gray-50 via-white to-gray-50/80">
       {messages.map((message, index) => {
         // Ensure action data is properly structured
         const enhancedMessage = {

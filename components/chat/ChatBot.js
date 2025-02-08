@@ -311,26 +311,26 @@ export default function ChatBot({ onMessageSent }) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white shadow-xl sm:rounded-2xl overflow-hidden">
-      <div className="flex flex-col h-full overflow-hidden">
-        <ChatHeader 
-          onNewChat={handleNewChat}
-          statsUpdateTrigger={statsUpdateTrigger}
+    <div className="h-full flex flex-col bg-white shadow-xl sm:rounded-2xl">
+      <ChatHeader 
+        onNewChat={handleNewChat}
+        statsUpdateTrigger={statsUpdateTrigger}
+        isLoading={isLoading}
+        error={error}
+        onStatClick={handleStatClick}
+      />
+      
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <ChatMessages 
+          messages={messages}
+          onActionConfirmation={handleActionConfirmation}
+          completedActions={completedActions}
+          lastMessageTimestamp={lastMessageTimestamp}
           isLoading={isLoading}
-          error={error}
-          onStatClick={handleStatClick}
         />
-        
-        <div className="flex-1 overflow-hidden">
-          <ChatMessages 
-            messages={messages}
-            onActionConfirmation={handleActionConfirmation}
-            completedActions={completedActions}
-            lastMessageTimestamp={lastMessageTimestamp}
-            isLoading={isLoading}
-          />
-        </div>
-        
+      </div>
+      
+      <div className="mt-auto">
         <ChatInput 
           input={input}
           setInput={setInput}
