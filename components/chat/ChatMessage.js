@@ -470,12 +470,12 @@ export default function ChatMessage({
                   </select>
                 </div>
                 {filteredListings?.length > 0 ? (
-                  <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4">
+                  <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
                     {filteredListings.map((listing, index) => {
                       const isOwnedByUser = listing.currentOwnerUsername === message.user?.username;
                       return (
                         <div key={index} 
-                             className={`group relative flex-none w-[280px] sm:w-[300px] rounded-xl transition-all duration-300 transform hover:-translate-y-1 ${
+                             className={`group relative flex-none w-[280px] sm:w-[300px] rounded-xl transition-all duration-300 transform hover:-translate-y-1 snap-center ${
                                isOwnedByUser 
                                  ? 'bg-gradient-to-br from-purple-50/90 to-indigo-50/90 border border-purple-200/50 shadow-md hover:shadow-lg' 
                                  : 'bg-gradient-to-br from-white/95 to-gray-50/95 border border-gray-200/50 shadow-sm hover:shadow-md'
