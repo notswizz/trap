@@ -1,201 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
-import Head from 'next/head';
-import Modal from '../components/Modal';
-import Login from '../components/Login';
-import SignUp from '../components/SignUp';
-import ChatBot from '../components/chat/ChatBot';
-import Typewriter from 'typewriter-effect';
-import NavBar from '../components/NavBar';
-import HomeContent from '../components/Home';
-import NotificationHistory from '../components/NotificationHistory';
+import { useState } from 'react';
+import { useAuth } from '@/utils/AuthContext';
+import ChatBot from '@/components/chat/ChatBot';
+import SimpleChatBot from '@/components/chat/SimpleChatBot';
+import NavBar from '@/components/NavBar';
 
 export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
-  const [user, setUser] = useState(null);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    // Check localStorage for user data on component mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        // Fetch latest user data including balance
-        fetch('/api/auth/user')
-          .then(res => res.json())
-          .then(data => {
-            if (data.user) {
-              setUser(data.user);
-              localStorage.setItem('user', JSON.stringify(data.user));
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching user data:', error);
-          });
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
-
-  // Memoize the functions for performance optimization
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('user');
-    setUser(null);
-  }, []);
-
-  const toggleModal = useCallback(() => setIsModalOpen((prev) => !prev), []);
-  const toggleForm = useCallback(() => setIsLogin((prev) => !prev), []);
-
-  // Add this function to fetch latest user data
-  const refreshUserData = useCallback(async () => {
-    try {
-      const response = await fetch('/api/auth/user');
-      const data = await response.json();
-      if (data.user) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
-    }
-  }, []);
-
-  // Add this to make the toggleModal function available to the HomeContent component
-  useEffect(() => {
-    window.toggleModal = toggleModal;
-    return () => {
-      delete window.toggleModal;
-    };
-  }, [toggleModal]);
-
-  // Add function to fetch unread count
-  const fetchUnreadCount = async () => {
-    try {
-      const res = await fetch('/api/notifications/history?limit=1', {
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUnreadCount(data.pagination.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
+  const handleMessageSent = async () => {
+    // Update unread count or other stats if needed
+    setUnreadCount(prev => prev + 1);
   };
 
-  // Add effect to fetch unread count periodically
-  useEffect(() => {
-    if (!user) return;
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Handle notification clear
-  const handleNotificationsClear = useCallback(async () => {
-    try {
-      const res = await fetch('/api/notifications/clear', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!res.ok) throw new Error('Failed to clear notifications');
-      
-      setUnreadCount(0);
-      await refreshUserData();
-      return true; // Return success status
-    } catch (error) {
-      console.error('Error clearing notifications:', error);
-      return false; // Return failure status
-    }
-  }, [refreshUserData]);
-
-  const pageTitle = user 
-    ? `${user.username} - gptSILK` 
-    : "gptSILK - AI Infinite Marketplace";
-
-  const pageDescription = user
-    ? "Manage your listings, chat with AI, and trade on gptSILK"
-    : "Create and browse listings via AI chat, manage your digital wallet, and trade with confidence.";
-
   return (
-    <>
-      <Head>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        
-        {/* Open Graph Meta Tags */}
-        <meta property="og:title" content="gptSILK - AI Infinite Marketplace" />
-        <meta property="og:description" content="Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://silkgpt.vercel.app" />
-        <meta property="og:image" content="https://silkgpt.vercel.app/gptsilk.png" />
-        <meta property="og:site_name" content="gptSILK" />
-
-        {/* Twitter Card Meta Tags */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="gptSILK - AI Infinite Marketplace" />
-        <meta name="twitter:description" content="Create and browse listings via AI chat, manage your digital wallet, and trade with confidence. Your infinite marketplace awaits." />
-        <meta name="twitter:image" content="https://silkgpt.vercel.app/gptsilk.png" />
-        
-        {/* Favicon and Apple Touch Icon */}
-        <link rel="icon" href="/gptsilk.png" />
-        <link rel="apple-touch-icon" href="/gptsilk.png" />
-        
-        {/* Additional Meta Tags */}
-        <meta name="theme-color" content="#4F46E5" />
-      </Head>
-      <div className="h-[100dvh] flex flex-col overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-        <NavBar 
-          isLoggedIn={!!user} 
-          user={user} 
-          onLogout={handleLogout}
-          onLogin={toggleModal}
-          onShowNotifications={() => setShowNotifications(true)}
-          unreadCount={unreadCount}
-        />
-        {/* Main Content */}
-        <main className="flex-1 overflow-hidden">
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-white via-purple-50/10 to-indigo-50/10">
+      <NavBar 
+        onShowNotifications={() => setUnreadCount(0)}
+        unreadCount={unreadCount}
+      />
+      
+      <div className="flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="h-[calc(100vh-8rem)] sm:h-[calc(100vh-10rem)] max-w-7xl mx-auto">
           {user ? (
-            <div className="h-[calc(100%-1rem)] sm:h-full sm:max-w-7xl sm:mx-auto sm:px-4 md:px-6 lg:px-8 sm:py-8">
-              <ChatBot onMessageSent={refreshUserData} />
-            </div>
+            <ChatBot onMessageSent={handleMessageSent} />
           ) : (
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
-              <HomeContent />
-            </div>
+            <SimpleChatBot />
           )}
-        </main>
-
-        {/* Auth Modal */}
-        <Modal isOpen={isModalOpen} onClose={toggleModal}>
-          {isLogin ? (
-            <Login onToggleForm={toggleForm} />
-          ) : (
-            <SignUp onToggleForm={toggleForm} />
-          )}
-        </Modal>
-
-        {/* Notification History */}
-        {user && (
-          <NotificationHistory 
-            isOpen={showNotifications} 
-            onClose={() => setShowNotifications(false)}
-            onClear={handleNotificationsClear}
-          />
-        )}
+        </div>
       </div>
-    </>
+    </main>
   );
 }

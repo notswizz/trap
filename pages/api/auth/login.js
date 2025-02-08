@@ -1,4 +1,5 @@
-import { loginUser } from '../../../utils/mongodb';
+import { connectToDatabase } from '../../../utils/mongodb';
+import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,17 +7,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
     // Basic validation
-    if (!email?.trim() || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!username?.trim() || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
     }
 
-    const user = await loginUser({ 
-      email: email.trim().toLowerCase(), 
-      password 
+    const { db } = await connectToDatabase();
+    
+    // Find user by username
+    const user = await db.collection('users').findOne({ 
+      username: username.toLowerCase() 
     });
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid username or password' });
+    }
+
+    // Verify password
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid username or password' });
+    }
+
+    // Update last login time
+    await db.collection('users').updateOne(
+      { _id: user._id },
+      { $set: { lastLogin: new Date() } }
+    );
 
     // Set secure HTTP-only cookie
     res.setHeader('Set-Cookie', [
@@ -34,6 +53,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(400).json({ message: 'Invalid email or password' });
+    res.status(400).json({ message: 'Invalid username or password' });
   }
 } 
